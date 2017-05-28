@@ -63,6 +63,8 @@ bool setaParametros();
 
 bool registraEvento();
 
+void mostraCursor(bool flag);
+
 // Funcões de utilização da biblioteca SDL2
 
 void animaSDL();

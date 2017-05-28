@@ -663,3 +663,18 @@
 	"begin_code.h"
 	"close_code.h"
 
+1495995358 source:e:\dropbox\fp\projetofinalfp1\main.c
+	"source.h"
+	<locale.h>
+
+1495995343 e:\dropbox\fp\projetofinalfp1\source.h
+	<stdbool.h>
+	<SDL.h>
+	<stdio.h>
+	<stdlib.h>
+
+1495995315 source:e:\dropbox\fp\projetofinalfp1\source.c
+	"source.h"
+	<conio.h>
+	<windows.h>
+

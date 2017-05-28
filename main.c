@@ -5,6 +5,7 @@ int main(int argc, char **argv)
 {
     bool sair = false;
     setlocale(LC_ALL, "Portuguese");
+    mostraCursor(false);
     while(!sair)
     {
         switch(mostraMenu())
@@ -13,13 +14,13 @@ int main(int argc, char **argv)
             instrucoes();
             break;
         case 2:
-            //defineParametros();
+            defineParametros();
             break;
         case 3:
             simula();
             break;
         case 4:
-            //estatisticas();
+            estatisticas();
             break;
         case 5:
             sair = true;

@@ -1,16 +1,29 @@
 #include "source.h"
+#include <conio.h>
+#include <windows.h>
+
+void mostraCursor(bool flag)
+{
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_CURSOR_INFO     cursorInfo;
+
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = flag;
+    SetConsoleCursorInfo(out, &cursorInfo);
+}
 
 int mostraMenu(void)
 {
     char escolha;
     bool valido = false;
     system("cls");
+    printf("Simulador de Elevadores - V 1.0\n\n");
     printf("1) Instruções\n2) Definição de parâmetros\n3) Iniciar simulação\n4) Estatistícas de simulação\n5) Sair\n");
     while(!valido)
     {
-        printf("\nOpção: ");
         fflush(stdin);
-        char c = getchar();
+        char c = getch();
         switch(c)
         {
         case '1':
@@ -34,7 +47,6 @@ int mostraMenu(void)
             escolha = 5;
             break;
         default:
-            printf("\nOpção inválida! Tente novamente");
             valido = false;
         }
     }
@@ -49,7 +61,7 @@ void instrucoes()
         system("cls");
         printf("Aqui aparecerão as instruções!\n\nPressione v para voltar\n");
         fflush(stdin);
-        c = getchar();
+        c = getch();
     }
 }
 
@@ -61,7 +73,7 @@ void defineParametros()
         system("cls");
         printf("Aqui serão definidos os parâmetros\n\nPressione v para voltar\n");
         fflush(stdin);
-        c = getchar();
+        c = getch();
     }
 }
 
@@ -73,7 +85,7 @@ void estatisticas()
         system("cls");
         printf("Aqui serão apresentadas as estatísticas do simulador\n\nPressione v para voltar\n");
         fflush(stdin);
-        c = getchar();
+        c = getch();
     }
 }
 
