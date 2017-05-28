@@ -10,11 +10,12 @@
 
 static const bool DESCENDO = false;
 static const bool SUBINDO = true;
-static const int TELA_LARGURA = 1280;
-static const int TELA_ALTURA = 720;
+static const int TELA_LARGURA = 1024;
+static const int TELA_ALTURA = 600;
 static const int TEMPO_ABERTURA = 1;
 static const int TEMPO_FECHAMENTO = 1;
 static const int TEMPO_POR_ANDAR = 5;
+static const int VEL_SCROLL = 300;
 static const Uint32 FLAGS_REND = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
 
 // Structs

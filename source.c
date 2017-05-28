@@ -99,12 +99,13 @@ SDL_Window * janela;
 SDL_Surface * imagem;
 SDL_Renderer * rend;
 SDL_Texture * tex;
+SDL_Rect dest;
 
 
 void animaSDL()
 {
     bool querSair = false;
-    if(!inicializaSDL("Simulador") || !carregaImagem("images\\Kappa.bmp"))
+    if(!inicializaSDL("Simulador") || !carregaImagem("images\\elevador.bmp"))
     {
         fechaSDL();
         system("pause");
@@ -112,19 +113,31 @@ void animaSDL()
     else
     {
         tex = SDL_CreateTextureFromSurface(rend,imagem);
-        SDL_RenderClear(rend);
-        SDL_RenderCopy(rend,tex,NULL,NULL);
-        SDL_RenderPresent(rend);
+        SDL_QueryTexture(tex,NULL,NULL, &dest.w, &dest.h);
+        dest.w /= 2;
+        dest.h /= 2;
+        dest.x = (TELA_LARGURA - dest.w)/ 2;
+        float pos_y = TELA_ALTURA;
         while(!querSair)
         {
             SDL_Event evento;
             while(SDL_PollEvent(&evento))
                 if(evento.type == SDL_QUIT)
                     querSair = true;
+            SDL_RenderClear(rend);
+            dest.y = (int) pos_y;
+            SDL_RenderCopy(rend,tex,NULL,&dest);
+            SDL_SetRenderDrawColor(rend,255,255,255,255);
+            SDL_RenderPresent(rend);
+            pos_y -= (float) VEL_SCROLL / 60;
+            if(pos_y <= -dest.h)
+                pos_y = TELA_ALTURA;
+            SDL_Delay(900/60);
         }
-        fechaSDL();
     }
+    fechaSDL();
 }
+
 
 // Cria a janela e o renderizador
 bool inicializaSDL(const char * titulo)
