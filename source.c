@@ -18,7 +18,7 @@ int mostraMenu(void)
     char escolha;
     bool valido = false;
     system("cls");
-    printf("Simulador de Elevadores - V 1.0\n\n");
+    printf("SimEle - V 1.0\n\n");
     printf("1) Instruções\n2) Definição de parâmetros\n3) Iniciar simulação\n4) Estatistícas de simulação\n5) Sair\n");
     while(!valido)
     {
@@ -59,21 +59,52 @@ void instrucoes()
     while(c != 'v')
     {
         system("cls");
-        printf("Aqui aparecerão as instruções!\n\nPressione v para voltar\n");
+        printf("Bem-vindo ao Simulador para Controle de Elevadores!\n\nPressione v para voltar\n");
         fflush(stdin);
         c = getch();
     }
 }
 
-void defineParametros()
+void defineParametros(Predio * p)
 {
     char c = 0;
     while(c != 'v')
     {
         system("cls");
-        printf("Aqui serão definidos os parâmetros\n\nPressione v para voltar\n");
+        printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",(*p).numAndares,(*p).numElevadores,(*p).capElevador);
+        printf("\nEscolha a opção para editar ou pressione v para voltar");
         fflush(stdin);
         c = getch();
+        switch(c)
+        {
+            int buf;
+            case '1':
+                system("cls");
+                mostraCursor(true);
+                printf("Número de andares: ");
+                scanf("%d",&buf);
+                p -> numAndares = buf;
+                mostraCursor(false);
+                break;
+            case '2':
+                system("cls");
+                mostraCursor(true);
+                printf("Número de elevadores: ");
+                scanf("%d",&buf);
+                p -> numElevadores = buf;
+                mostraCursor(false);
+                break;
+            case '3':
+                system("cls");
+                mostraCursor(true);
+                printf("Capacidade máxima por elevador: ");
+                scanf("%d",&buf);
+                p -> capElevador = buf;
+                mostraCursor(false);
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -89,9 +120,11 @@ void estatisticas()
     }
 }
 
-void simula()
+void simula(Predio * p)
 {
+    p->elevadores = (Elevador *) malloc((*p).numElevadores * sizeof(Elevador));
     animaSDL();
+    free((*p).elevadores);
 }
 // Código relacionado a biblioteca SDL
 
@@ -105,7 +138,7 @@ SDL_Rect dest;
 void animaSDL()
 {
     bool querSair = false;
-    if(!inicializaSDL("Simulador") || !carregaImagem("images\\elevador.bmp"))
+    if(!inicializaSDL("Simulador") || !carregaImagem("images\\Kappa.bmp"))
     {
         fechaSDL();
         system("pause");
@@ -132,7 +165,7 @@ void animaSDL()
             pos_y -= (float) VEL_SCROLL / 60;
             if(pos_y <= -dest.h)
                 pos_y = TELA_ALTURA;
-            SDL_Delay(900/60);
+            SDL_Delay(1000/60);
         }
     }
     fechaSDL();

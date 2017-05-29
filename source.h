@@ -16,6 +16,9 @@ static const int TEMPO_ABERTURA = 1;
 static const int TEMPO_FECHAMENTO = 1;
 static const int TEMPO_POR_ANDAR = 5;
 static const int VEL_SCROLL = 300;
+static const int NUM_ANDARES_STD = 5;
+static const int NUM_ELEVADORES_STD = 2;
+static const int CAP_ELEVADOR_STD = 10;
 static const Uint32 FLAGS_REND = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
 
 // Structs
@@ -32,13 +35,15 @@ typedef struct
 typedef struct
 {
     bool dentroElevador;
-    int numero;
     int andarDestino;
 } Passageiro;
 
 typedef struct
 {
     int tempoDecorrido;
+    int numElevadores;
+    int numAndares;
+    int capElevador;
     Elevador * elevadores;
 } Predio;
 
@@ -48,11 +53,11 @@ int mostraMenu();
 
 void instrucoes();
 
-void defineParametros();
+void defineParametros(Predio * p);
 
 void estatisticas();
 
-void simula();
+void simula(Predio * p);
 
 bool moveElevador();
 
