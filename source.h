@@ -29,7 +29,7 @@ typedef struct
     bool sentido;
     int qntdPassageiros;
     int andarDestino;
-    int andarOrigem;
+    int andarAtual;
 } Elevador;
 
 typedef struct

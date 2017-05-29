@@ -122,7 +122,18 @@ void estatisticas()
 
 void simula(Predio * p)
 {
+    int i;
     p->elevadores = (Elevador *) malloc((*p).numElevadores * sizeof(Elevador));
+    p->tempoDecorrido = 0;
+    for(i = 0; i < (*p).numElevadores; i++)
+        p->elevadores[i].andarAtual = 0;
+    p->elevadores[0].andarDestino = 7;
+    for(i = 0; (*p).elevadores[0].andarAtual < (*p).elevadores[0].andarDestino; i++)
+    {
+        p->tempoDecorrido += 5;
+        p->elevadores[0].andarAtual++;
+    }
+    printf("\nTempo decorrido: %d Andar do E0: %d",(*p).tempoDecorrido,(*p).elevadores[0].andarAtual);
     animaSDL();
     free((*p).elevadores);
 }
