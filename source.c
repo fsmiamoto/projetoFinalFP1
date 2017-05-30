@@ -2,16 +2,7 @@
 #include <conio.h>
 #include <windows.h>
 
-void mostraCursor(bool flag)
-{
-    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    CONSOLE_CURSOR_INFO     cursorInfo;
-
-    GetConsoleCursorInfo(out, &cursorInfo);
-    cursorInfo.bVisible = flag;
-    SetConsoleCursorInfo(out, &cursorInfo);
-}
+/* Funções do simulador */
 
 int mostraMenu(void)
 {
@@ -52,7 +43,7 @@ int mostraMenu(void)
     }
     return escolha;
 }
-
+// Função de apresentação das instruções
 void instrucoes()
 {
     char c = 0;
@@ -64,50 +55,50 @@ void instrucoes()
         c = getch();
     }
 }
-
+// Função de definição dos parâmetros de simulação
 void defineParametros(Predio * p)
 {
     char c = 0;
     while(c != 'v')
     {
         system("cls");
-        printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",(*p).numAndares,(*p).numElevadores,(*p).capElevador);
+        printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",p->numAndares,p->numElevadores,p->capElevador);
         printf("\nEscolha a opção para editar ou pressione v para voltar");
         fflush(stdin);
         c = getch();
         switch(c)
         {
             int buf;
-            case '1':
-                system("cls");
-                mostraCursor(true);
-                printf("Número de andares: ");
-                scanf("%d",&buf);
-                p -> numAndares = buf;
-                mostraCursor(false);
-                break;
-            case '2':
-                system("cls");
-                mostraCursor(true);
-                printf("Número de elevadores: ");
-                scanf("%d",&buf);
-                p -> numElevadores = buf;
-                mostraCursor(false);
-                break;
-            case '3':
-                system("cls");
-                mostraCursor(true);
-                printf("Capacidade máxima por elevador: ");
-                scanf("%d",&buf);
-                p -> capElevador = buf;
-                mostraCursor(false);
-                break;
-            default:
-                break;
+        case '1':
+            system("cls");
+            mostraCursor(true);
+            printf("Número de andares: ");
+            scanf("%d",&buf);
+            p -> numAndares = buf;
+            mostraCursor(false);
+            break;
+        case '2':
+            system("cls");
+            mostraCursor(true);
+            printf("Número de elevadores: ");
+            scanf("%d",&buf);
+            p -> numElevadores = buf;
+            mostraCursor(false);
+            break;
+        case '3':
+            system("cls");
+            mostraCursor(true);
+            printf("Capacidade máxima por elevador: ");
+            scanf("%d",&buf);
+            p -> capElevador = buf;
+            mostraCursor(false);
+            break;
+        default:
+            break;
         }
     }
 }
-
+// Função de apresentação das estatísticas geradas pelo simulador
 void estatisticas()
 {
     char c = 0;
@@ -119,25 +110,35 @@ void estatisticas()
         c = getch();
     }
 }
-
+// Função que inicia a simulação
 void simula(Predio * p)
 {
     int i;
-    p->elevadores = (Elevador *) malloc((*p).numElevadores * sizeof(Elevador));
-    p->tempoDecorrido = 0;
-    for(i = 0; i < (*p).numElevadores; i++)
+    //int tempoDecorrido;
+    // Aloca um vetor de structs Elevador na struct Predio
+    p->elevadores = (Elevador *) malloc(p->numElevadores * sizeof(Elevador));
+    // Elevadores começam no Térreo
+    for(i = 0; i < p->numElevadores; i++)
         p->elevadores[i].andarAtual = 0;
-    p->elevadores[0].andarDestino = 7;
-    for(i = 0; (*p).elevadores[0].andarAtual < (*p).elevadores[0].andarDestino; i++)
-    {
-        p->tempoDecorrido += 5;
-        p->elevadores[0].andarAtual++;
-    }
-    printf("\nTempo decorrido: %d Andar do E0: %d",(*p).tempoDecorrido,(*p).elevadores[0].andarAtual);
     animaSDL();
     free((*p).elevadores);
 }
-// Código relacionado a biblioteca SDL
+
+Chamada geraChamadas(int origem, FILE * arq)
+{
+    Chamada c;
+    switch(origem)
+    {
+        //Arquivo
+        case 3:
+            break;
+    }
+    return c;
+}
+
+/*------------------------------------------------------------------------------------------------*/
+
+/* Funcões da biblioteca SDL */
 
 SDL_Window * janela;
 SDL_Surface * imagem;
@@ -145,11 +146,12 @@ SDL_Renderer * rend;
 SDL_Texture * tex;
 SDL_Rect dest;
 
+// Gera animação na janela
 
 void animaSDL()
 {
     bool querSair = false;
-    if(!inicializaSDL("Simulador") || !carregaImagem("images\\Kappa.bmp"))
+    if(!inicializaSDL("Simulador") || !carregaImagem("images\\feels.png"))
     {
         fechaSDL();
         system("pause");
@@ -158,8 +160,8 @@ void animaSDL()
     {
         tex = SDL_CreateTextureFromSurface(rend,imagem);
         SDL_QueryTexture(tex,NULL,NULL, &dest.w, &dest.h);
-        dest.w /= 2;
-        dest.h /= 2;
+        dest.w /= 4;
+        dest.h /= 4;
         dest.x = (TELA_LARGURA - dest.w)/ 2;
         float pos_y = TELA_ALTURA;
         while(!querSair)
@@ -184,6 +186,7 @@ void animaSDL()
 
 
 // Cria a janela e o renderizador
+
 bool inicializaSDL(const char * titulo)
 {
     if(SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -204,14 +207,20 @@ bool inicializaSDL(const char * titulo)
         printf("Não foi possível criar o renderizador! SDL_Error: %s\n",SDL_GetError());
         return false;
     }
-
+    int imgFlags = IMG_INIT_PNG;
+    if( !( IMG_Init( imgFlags ) & imgFlags ) )
+    {
+        printf("Não foi possível inicializar o SDL_image! SDL_Error: %s",SDL_GetError());
+        return false;
+    }
     return true;
 }
 
-// Carrega imagem BMP na Surface imagem
+// Carrega imagem na Surface imagem
+
 bool carregaImagem(const char * nome)
 {
-    imagem = SDL_LoadBMP(nome);
+    imagem = IMG_Load(nome);
     if(!imagem)
     {
         printf("Não foi possível carregar a imagem %s! SDL_Error: %s\n", nome, SDL_GetError() );
@@ -219,6 +228,8 @@ bool carregaImagem(const char * nome)
     }
     return true;
 }
+
+// Encerra a biblioteca SDL
 
 void fechaSDL()
 {
@@ -228,3 +239,17 @@ void fechaSDL()
     SDL_DestroyRenderer(rend);
     SDL_Quit();
 }
+/*------------------------------------------------------------------------------------------------*/
+
+/* Funções para o console*/
+
+// Desabilita ou mostra o cursor no console
+void mostraCursor(bool flag)
+{
+    HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO     cursorInfo;
+    GetConsoleCursorInfo(out, &cursorInfo);
+    cursorInfo.bVisible = flag;
+    SetConsoleCursorInfo(out, &cursorInfo);
+}
+/*------------------------------------------------------------------------------------------------*/

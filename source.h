@@ -5,6 +5,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <SDL_image.h>
 
 // Constantes utilizadas no simulador
 
@@ -15,10 +16,14 @@ static const int TELA_ALTURA = 600;
 static const int TEMPO_ABERTURA = 1;
 static const int TEMPO_FECHAMENTO = 1;
 static const int TEMPO_POR_ANDAR = 5;
+static const int TEMPO_MAX = 600;
 static const int VEL_SCROLL = 300;
 static const int NUM_ANDARES_STD = 5;
 static const int NUM_ELEVADORES_STD = 2;
 static const int CAP_ELEVADOR_STD = 10;
+static const int TECLADO = 1;
+static const int ALEATORIO = 2;
+static const int ARQUIVO = 3;
 static const Uint32 FLAGS_REND = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
 
 // Structs
@@ -28,7 +33,8 @@ typedef struct
     bool temPassageiros;
     bool sentido;
     int qntdPassageiros;
-    int andarDestino;
+    int totalPassageiros;
+    int andarDestino; // Trocar por vetor dinâmico!
     int andarAtual;
 } Elevador;
 
@@ -40,12 +46,18 @@ typedef struct
 
 typedef struct
 {
-    int tempoDecorrido;
     int numElevadores;
     int numAndares;
     int capElevador;
     Elevador * elevadores;
 } Predio;
+
+typedef struct
+{
+    int tempo;
+    int andar;
+    int qntdPassageiros;
+} Chamada;
 
 // Funções de implementação do simulador
 
@@ -63,7 +75,7 @@ bool moveElevador();
 
 bool geraEstatisticas();
 
-bool geraChamadas();
+Chamada geraChamadas(int origem, FILE * arq);
 
 bool setaParametros();
 

@@ -21,6 +21,7 @@
 					<Add library="mingw32" />
 					<Add library="SDL2main" />
 					<Add library="SDL2" />
+					<Add library="SDL2_image" />
 					<Add directory="$(#sdl2.lib)" />
 					<Add directory="$(#sdl2.bin)" />
 				</Linker>
@@ -41,6 +42,7 @@
 					<Add library="mingw32" />
 					<Add library="SDL2main" />
 					<Add library="SDL2" />
+					<Add library="SDL2_image" />
 					<Add directory="$(#sdl2.lib)" />
 					<Add directory="$(#sdl2.bin)" />
 				</Linker>

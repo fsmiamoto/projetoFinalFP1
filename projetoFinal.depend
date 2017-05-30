@@ -667,13 +667,14 @@
 	"source.h"
 	<locale.h>
 
-1496072431 e:\dropbox\fp\projetofinalfp1\source.h
+1496107700 e:\dropbox\fp\projetofinalfp1\source.h
 	<stdbool.h>
 	<SDL.h>
 	<stdio.h>
 	<stdlib.h>
+	<SDL_image.h>
 
-1496072482 source:e:\dropbox\fp\projetofinalfp1\source.c
+1496107761 source:e:\dropbox\fp\projetofinalfp1\source.c
 	"source.h"
 	<conio.h>
 	<windows.h>
@@ -1011,4 +1012,10 @@
 	"source.h"
 	<conio.h>
 	<windows.h>
+
+1451800373 e:\dropbox\fp\sdl2-2.0.5\i686-w64-mingw32\include\sdl2\sdl_image.h
+	"SDL.h"
+	"SDL_version.h"
+	"begin_code.h"
+	"close_code.h"
 
