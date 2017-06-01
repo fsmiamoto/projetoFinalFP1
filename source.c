@@ -114,12 +114,27 @@ void estatisticas()
 void simula(Predio * p)
 {
     int i;
-    //int tempoDecorrido;
+    int tempoDecorrido = 0;
     // Aloca um vetor de structs Elevador na struct Predio
     p->elevadores = (Elevador *) malloc(p->numElevadores * sizeof(Elevador));
-    // Elevadores começam no Térreo
+    // Setup dos elevadores
     for(i = 0; i < p->numElevadores; i++)
-        p->elevadores[i].andarAtual = 0;
+    {
+        p->elevadores[i].andarAtual = 0; // Começam no térreo
+        p->elevadores[i].andarSel = (bool *) calloc(p->numAndares + 1,sizeof(bool)); // Inicializa array dos andares selecionados
+        p->elevadores[i].totalPassageiros = 0; // Inicializa o total de passageiros de cada elevador
+    }
+    p->elevadores[0].andarSel[5] = true;
+    p->elevadores[0].andarAtual = 10;
+    p->elevadores[0].qntdPassageiros = 1;
+    p->elevadores[0].temPassageiros = true;
+    p->elevadores[0].totalPassageiros += 1;
+    p->elevadores[0].sentido = DESCENDO;
+    for(i = 0; i < p->numAndares + 1; i++)
+        if(p->elevadores[0].sentido == DESCENDO && p->elevadores[0].andarSel[i] == true)
+            p->elevadores[0].andarDestino = i;
+    tempoDecorrido += moveElevador(&(p->elevadores[0]));
+    printf("Tempo decorrido: %d s \nE0 - Andar atual: %d",tempoDecorrido,p->elevadores[0].andarAtual);
     animaSDL();
     free((*p).elevadores);
 }
@@ -134,6 +149,13 @@ Chamada geraChamadas(int origem, FILE * arq)
             break;
     }
     return c;
+}
+
+int moveElevador(Elevador * e)
+{
+    int t = 5*abs(e->andarAtual - e->andarDestino);
+    e->andarAtual = e->andarDestino;
+    return t;
 }
 
 /*------------------------------------------------------------------------------------------------*/

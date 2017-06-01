@@ -31,11 +31,12 @@ static const Uint32 FLAGS_REND = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENT
 typedef struct
 {
     bool temPassageiros;
-    bool sentido;
-    int qntdPassageiros;
-    int totalPassageiros;
-    int andarDestino; // Trocar por vetor dinâmico!
+    bool sentido;         // Sentido: Subindo ou Descendo
+    int qntdPassageiros;  // Quantidade atual de passageiros
+    int totalPassageiros; // Total de passageiros transportados
+    int andarDestino;
     int andarAtual;
+    bool * andarSel; // Vetor que indicará quais andares foram selecionados.
 } Elevador;
 
 typedef struct
@@ -71,7 +72,7 @@ void estatisticas();
 
 void simula(Predio * p);
 
-bool moveElevador();
+int moveElevador(Elevador * e);
 
 bool geraEstatisticas();
 
