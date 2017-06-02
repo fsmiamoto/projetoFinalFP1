@@ -115,6 +115,7 @@ void simula(Predio * p)
 {
     int i;
     int tempoDecorrido = 0;
+    FILE * arq;
     // Aloca um vetor de structs Elevador na struct Predio
     p->elevadores = (Elevador *) malloc(p->numElevadores * sizeof(Elevador));
     // Setup dos elevadores
@@ -124,28 +125,48 @@ void simula(Predio * p)
         p->elevadores[i].andarSel = (bool *) calloc(p->numAndares + 1,sizeof(bool)); // Inicializa array dos andares selecionados
         p->elevadores[i].totalPassageiros = 0; // Inicializa o total de passageiros de cada elevador
     }
-    p->elevadores[0].andarSel[5] = true;
-    p->elevadores[0].andarAtual = 10;
-    p->elevadores[0].qntdPassageiros = 1;
-    p->elevadores[0].temPassageiros = true;
-    p->elevadores[0].totalPassageiros += 1;
-    p->elevadores[0].sentido = DESCENDO;
-    for(i = 0; i < p->numAndares + 1; i++)
-        if(p->elevadores[0].sentido == DESCENDO && p->elevadores[0].andarSel[i] == true)
-            p->elevadores[0].andarDestino = i;
-    tempoDecorrido += moveElevador(&(p->elevadores[0]));
-    printf("Tempo decorrido: %d s \nE0 - Andar atual: %d",tempoDecorrido,p->elevadores[0].andarAtual);
+    if(ORIGEM_CHAMADAS == 2)
+    {
+        arq = fopen(arqChamadas,"r");
+        for(i = 0; i < 3; i++)
+        {
+            Chamada c = geraChamadas(3,arq);
+            /*Inserir função que decide qual elevador chamar*/
+            p->elevadores[0].andarSel[c.andar] = true;
+            p->elevadores[0].andarDestino = c.andar;
+            p->elevadores[0].totalPassageiros += c.qntdPassageiros;
+            if(p->elevadores[0].andarAtual < c.andar)
+                p->elevadores[0].sentido = DESCENDO;
+            else
+                p->elevadores[0].sentido = SUBINDO;
+            tempoDecorrido += moveElevador(&(p->elevadores[0]));
+            printf("Tempo decorrido: %d s \nE0 - Andar atual: %d\n",tempoDecorrido,p->elevadores[0].andarAtual);
+        }
+    }
     animaSDL();
-    free((*p).elevadores);
+    // Libera memoória utilizada e fechar arquivos utilizados
+     for(i = 0; i < p->numElevadores; i++)
+    {
+        free(p->elevadores[i].andarSel);
+        free(p->elevadores);
+        if(ORIGEM_CHAMADAS == 2)
+            fclose(arq);
+    }
 }
 
 Chamada geraChamadas(int origem, FILE * arq)
 {
     Chamada c;
+    int andar,tempo,qntd;
     switch(origem)
     {
         //Arquivo
         case 3:
+            fscanf(arq,"%d|%d|%d",&tempo,&andar,&qntd);
+            /*Adicionar código de validação*/
+            c.andar = andar;
+            c.tempo = tempo;
+            c.qntdPassageiros = qntd;
             break;
     }
     return c;

@@ -7,8 +7,11 @@
 #include <stdlib.h>
 #include <SDL_image.h>
 
-// Constantes utilizadas no simulador
+// Flags do programa
+static const Uint32 FLAGS_REND = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
+static const int ORIGEM_CHAMADAS = 2; // 1: Aleatório 2: Arquivo 3: Teclado
 
+// Constantes utilizadas no simulador
 static const bool DESCENDO = false;
 static const bool SUBINDO = true;
 static const int TELA_LARGURA = 1024;
@@ -21,22 +24,17 @@ static const int VEL_SCROLL = 300;
 static const int NUM_ANDARES_STD = 5;
 static const int NUM_ELEVADORES_STD = 2;
 static const int CAP_ELEVADOR_STD = 10;
-static const int TECLADO = 1;
-static const int ALEATORIO = 2;
-static const int ARQUIVO = 3;
-static const Uint32 FLAGS_REND = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
+static const char * arqChamadas = "chamadas.txt";
 
 // Structs
-
 typedef struct
 {
-    bool temPassageiros;
     bool sentido;         // Sentido: Subindo ou Descendo
     int qntdPassageiros;  // Quantidade atual de passageiros
     int totalPassageiros; // Total de passageiros transportados
     int andarDestino;
     int andarAtual;
-    bool * andarSel; // Vetor que indicará quais andares foram selecionados.
+    bool * andarSel;      // Vetor que indicará quais andares foram selecionados.
 } Elevador;
 
 typedef struct
