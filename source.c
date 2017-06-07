@@ -1,4 +1,5 @@
 #include "source.h"
+#include "sdl_funcoes.h"
 #include <conio.h>
 #include <windows.h>
 
@@ -56,13 +57,13 @@ void instrucoes()
     }
 }
 // Função de definição dos parâmetros de simulação
-void defineParametros(Predio * p)
+void defineParametros(int * elevadores, int * andares, int * cap)
 {
     char c = 0;
     while(c != 'v')
     {
         system("cls");
-        printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",p->numAndares,p->numElevadores,p->capElevador);
+        printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",*andares,*elevadores,*cap);
         printf("\nEscolha a opção para editar ou pressione v para voltar");
         fflush(stdin);
         c = getch();
@@ -74,7 +75,7 @@ void defineParametros(Predio * p)
             mostraCursor(true);
             printf("Número de andares: ");
             scanf("%d",&buf);
-            p -> numAndares = buf;
+            * andares = buf;
             mostraCursor(false);
             break;
         case '2':
@@ -82,7 +83,7 @@ void defineParametros(Predio * p)
             mostraCursor(true);
             printf("Número de elevadores: ");
             scanf("%d",&buf);
-            p -> numElevadores = buf;
+            * elevadores = buf;
             mostraCursor(false);
             break;
         case '3':
@@ -90,7 +91,7 @@ void defineParametros(Predio * p)
             mostraCursor(true);
             printf("Capacidade máxima por elevador: ");
             scanf("%d",&buf);
-            p -> capElevador = buf;
+            * cap = buf;
             mostraCursor(false);
             break;
         default:
@@ -111,178 +112,103 @@ void estatisticas()
     }
 }
 // Função que inicia a simulação
-void simula(Predio * p)
+void simula(int numElevadores, int numAndares,int capElevador)
 {
     int i;
     int tempoDecorrido = 0;
-    FILE * arq;
-    // Aloca um vetor de structs Elevador na struct Predio
-    p->elevadores = (Elevador *) malloc(p->numElevadores * sizeof(Elevador));
+    // Aloca um vetor com o número de elevadores da struct Elevador
+    Elevador * elevadores = (Elevador *) malloc(numElevadores * sizeof(Elevador));
+    Chamada call;
+    FILE * arq = fopen(arqChamadas,"r"); // Arquivo de leitura de chamadas
     // Setup dos elevadores
-    for(i = 0; i < p->numElevadores; i++)
+    for(i = 0; i < numElevadores; i++)
     {
-        p->elevadores[i].andarAtual = 0; // Começam no térreo
-        p->elevadores[i].andarSel = (bool *) calloc(p->numAndares + 1,sizeof(bool)); // Inicializa array dos andares selecionados
-        p->elevadores[i].totalPassageiros = 0; // Inicializa o total de passageiros de cada elevador
+        elevadores[i].andarAtual = 0; // Começam no térreo
+        elevadores[i].totalPassageiros = 0; // Inicializa o total de passageiros de cada elevador
+        elevadores[i].numPassageiros = 0;
+        elevadores[i].sentido = SUBINDO;
+        elevadores[i].chamadas = (Chamada *) calloc(capElevador,sizeof(Chamada));
+        elevadores[i].capMax = capElevador;
+        elevadores[i].entreAndares = 0;
     }
-    if(ORIGEM_CHAMADAS == 2)
+    // Inicio do loop de chamadas
+
+    while (tempoDecorrido <= TEMPO_MAX && pegaChamadas(&call,ORIGEM_CHAMADAS,arq))
     {
-        arq = fopen(arqChamadas,"r");
-        for(i = 0; i < 3; i++)
+        delegaElevador(call, elevadores, numElevadores);
+        while(tempoDecorrido < call.tempoInicial)
         {
-            Chamada c = geraChamadas(3,arq);
-            /*Inserir função que decide qual elevador chamar*/
-            p->elevadores[0].andarSel[c.andar] = true;
-            p->elevadores[0].andarDestino = c.andar;
-            p->elevadores[0].totalPassageiros += c.qntdPassageiros;
-            if(p->elevadores[0].andarAtual < c.andar)
-                p->elevadores[0].sentido = DESCENDO;
-            else
-                p->elevadores[0].sentido = SUBINDO;
-            tempoDecorrido += moveElevador(&(p->elevadores[0]));
-            printf("Tempo decorrido: %d s \nE0 - Andar atual: %d\n",tempoDecorrido,p->elevadores[0].andarAtual);
+            printf("\nTempo decorrido: %d Andar Atual: %d\n",tempoDecorrido++,elevadores[0].andarAtual);
+            moveElevadores(elevadores, numElevadores);
         }
+
+        //printf("Tempo decorrido: %d\n",tempoDecorrido);
     }
-    animaSDL();
-    // Libera memoória utilizada e fechar arquivos utilizados
-     for(i = 0; i < p->numElevadores; i++)
+
+    // Fim do loop
+    putchar('\n');
+    system("pause");
+    //animaSDL();
+
+    // Libera memória utilizada e fechar arquivos utilizados
+    for(i = 0; i < numElevadores; i++)
     {
-        free(p->elevadores[i].andarSel);
-        free(p->elevadores);
-        if(ORIGEM_CHAMADAS == 2)
-            fclose(arq);
+        free(elevadores[i].chamadas);
+        free(elevadores);
+        fclose(arq);
     }
 }
 
-Chamada geraChamadas(int origem, FILE * arq)
+bool pegaChamadas(Chamada * c, int origem, FILE * arq)
 {
-    Chamada c;
-    int andar,tempo,qntd;
+    bool status = true;
+    int andarOrigem,andarDestino,tempoCall;
     switch(origem)
     {
-        //Arquivo
-        case 3:
-            fscanf(arq,"%d|%d|%d",&tempo,&andar,&qntd);
-            /*Adicionar código de validação*/
-            c.andar = andar;
-            c.tempo = tempo;
-            c.qntdPassageiros = qntd;
-            break;
-    }
-    return c;
-}
-
-int moveElevador(Elevador * e)
-{
-    int t = 5*abs(e->andarAtual - e->andarDestino);
-    e->andarAtual = e->andarDestino;
-    return t;
-}
-
-/*------------------------------------------------------------------------------------------------*/
-
-/* Funcões da biblioteca SDL */
-
-SDL_Window * janela;
-SDL_Surface * imagem;
-SDL_Renderer * rend;
-SDL_Texture * tex;
-SDL_Rect dest;
-
-// Gera animação na janela
-
-void animaSDL()
-{
-    bool querSair = false;
-    if(!inicializaSDL("Simulador") || !carregaImagem("images\\feels.png"))
-    {
-        fechaSDL();
-        system("pause");
-    }
-    else
-    {
-        tex = SDL_CreateTextureFromSurface(rend,imagem);
-        SDL_QueryTexture(tex,NULL,NULL, &dest.w, &dest.h);
-        dest.w /= 4;
-        dest.h /= 4;
-        dest.x = (TELA_LARGURA - dest.w)/ 2;
-        float pos_y = TELA_ALTURA;
-        while(!querSair)
+    //Arquivo
+    case 2:
+        if(fscanf(arq,"%d|%d|%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
         {
-            SDL_Event evento;
-            while(SDL_PollEvent(&evento))
-                if(evento.type == SDL_QUIT)
-                    querSair = true;
-            SDL_RenderClear(rend);
-            dest.y = (int) pos_y;
-            SDL_RenderCopy(rend,tex,NULL,&dest);
-            SDL_SetRenderDrawColor(rend,255,255,255,255);
-            SDL_RenderPresent(rend);
-            pos_y -= (float) VEL_SCROLL / 60;
-            if(pos_y <= -dest.h)
-                pos_y = TELA_ALTURA;
-            SDL_Delay(1000/60);
+            c->andarOrigem = andarOrigem;
+            c->andarDestino = andarDestino;
+            c->tempoInicial = tempoCall;
+            status = true;
+        }
+        else
+            status = false;
+        break;
+    }
+    return status;
+}
+
+void delegaElevador(Chamada c, Elevador * elevadores, int numElevadores)
+{
+    elevadores[0].andarDestino = 10;
+    elevadores[0].numPassageiros = 1;
+    elevadores[0].totalPassageiros++;
+}
+
+int moveElevadores(Elevador * e, int numElevadores)
+{
+    int i;
+    for(i = 0; i < numElevadores; i++)
+    {
+        if(e[i].numPassageiros > 0)
+        {
+            if(++e[i].entreAndares == 5)
+            {
+                if(e[i].sentido == SUBINDO)
+                    e[i].andarAtual++;
+                else
+                    e[i].andarAtual--;
+                e[i].entreAndares = 0;
+            }
+            if(e[i].andarAtual == e[i].andarDestino)
+                printf("\nChegou!, D: %d\n",e[i].andarDestino);
         }
     }
-    fechaSDL();
+    return 0;
 }
-
-
-// Cria a janela e o renderizador
-
-bool inicializaSDL(const char * titulo)
-{
-    if(SDL_Init(SDL_INIT_VIDEO) < 0)
-    {
-        SDL_Log("Não pode inicializar %s", SDL_GetError());
-        printf( "SDL não pode ser inicializado! SDL_Error: %s\n", SDL_GetError() );
-        return false;
-    }
-    janela = SDL_CreateWindow(titulo, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, TELA_LARGURA, TELA_ALTURA, 0);
-    if(!janela)
-    {
-        printf("Janela não pode ser criada! SDL_Error: %s\n", SDL_GetError());
-        return false;
-    }
-    rend = SDL_CreateRenderer(janela,-1,FLAGS_REND);
-    if(!rend)
-    {
-        printf("Não foi possível criar o renderizador! SDL_Error: %s\n",SDL_GetError());
-        return false;
-    }
-    int imgFlags = IMG_INIT_PNG;
-    if( !( IMG_Init( imgFlags ) & imgFlags ) )
-    {
-        printf("Não foi possível inicializar o SDL_image! SDL_Error: %s",SDL_GetError());
-        return false;
-    }
-    return true;
-}
-
-// Carrega imagem na Surface imagem
-
-bool carregaImagem(const char * nome)
-{
-    imagem = IMG_Load(nome);
-    if(!imagem)
-    {
-        printf("Não foi possível carregar a imagem %s! SDL_Error: %s\n", nome, SDL_GetError() );
-        return false;
-    }
-    return true;
-}
-
-// Encerra a biblioteca SDL
-
-void fechaSDL()
-{
-    SDL_FreeSurface(imagem);
-    SDL_DestroyWindow(janela);
-    SDL_DestroyTexture(tex);
-    SDL_DestroyRenderer(rend);
-    SDL_Quit();
-}
-/*------------------------------------------------------------------------------------------------*/
 
 /* Funções para o console*/
 

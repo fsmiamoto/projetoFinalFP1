@@ -54,6 +54,10 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="sdl_funcoes.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="sdl_funcoes.h" />
 		<Unit filename="source.c">
 			<Option compilerVar="CC" />
 		</Unit>

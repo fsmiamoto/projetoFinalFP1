@@ -4,12 +4,11 @@
 int main(int argc, char **argv)
 {
     bool sair = false;
-    Predio p;
     setlocale(LC_ALL, "Portuguese");
     mostraCursor(false);
-    p.capElevador = CAP_ELEVADOR_STD;
-    p.numAndares = NUM_ANDARES_STD;
-    p.numElevadores = NUM_ELEVADORES_STD;
+    int numElevadores = NUM_ELEVADORES_STD;
+    int numAndares = NUM_ANDARES_STD;
+    int capElevador = CAP_ELEVADOR_STD;
     while(!sair)
     {
         switch(mostraMenu())
@@ -18,10 +17,10 @@ int main(int argc, char **argv)
             instrucoes();
             break;
         case 2:
-            defineParametros(&p);
+            defineParametros(&numElevadores,&numAndares,&capElevador);
             break;
         case 3:
-            simula(&p);
+            simula(numElevadores,numAndares,capElevador);
             break;
         case 4:
             estatisticas();

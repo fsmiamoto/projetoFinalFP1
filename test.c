@@ -10,4 +10,24 @@
             p->elevadores[0].andarDestino = i;
     tempoDecorrido += moveElevador(&(p->elevadores[0]));
     printf("Tempo decorrido: %d s \nE0 - Andar atual: %d",tempoDecorrido,p->elevadores[0].andarAtual);
-    */
+    */ 
+/*
+     if(ORIGEM_CHAMADAS == 2)
+    {
+        arq = fopen(arqChamadas,"r");
+        for(i = 0; i < 3; i++)
+        {
+            Chamada c = geraChamadas(3,arq);
+        
+            elevadores[0].andarSel[c.andar] = true;
+            elevadores[0].andarDestino = c.andar;
+            elevadores[0].totalPassageiros += c.qntdPassageiros;
+            if(elevadores[0].andarAtual < c.andar)
+                elevadores[0].sentido = DESCENDO;
+            else
+                elevadores[0].sentido = SUBINDO;
+            tempoDecorrido += moveElevadores(&(elevadores[0]));
+            printf("Tempo decorrido: %d s \nE0 - Andar atual: %d\n",tempoDecorrido,elevadores[0].andarAtual);
+        }
+    }
+*/
