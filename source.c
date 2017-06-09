@@ -3,7 +3,16 @@
 #include <conio.h>
 #include <windows.h>
 
-/* Funções do simulador */
+// Variáveis globais
+int tempo;
+int numAndares,numElevadores,capElevador;
+Elevador * elevadores;
+Andar * andares;
+Chamada call;
+FILE * arq ;
+
+
+/* Funções do Menu */
 
 int mostraMenu(void)
 {
@@ -100,7 +109,7 @@ void defineParametros(int * elevadores, int * andares, int * cap)
     }
 }
 // Função de apresentação das estatísticas geradas pelo simulador
-void estatisticas()
+void mostraEstatisticas()
 {
     char c = 0;
     while(c != 'v')
@@ -112,54 +121,80 @@ void estatisticas()
     }
 }
 // Função que inicia a simulação
-void simula(int numElevadores, int numAndares,int capElevador)
+void simula(int numE, int numA,int cap)
 {
-    int i;
-    int tempoDecorrido = 0;
     // Aloca um vetor com o número de elevadores da struct Elevador
-    Elevador * elevadores = (Elevador *) malloc(numElevadores * sizeof(Elevador));
-    Chamada call;
-    FILE * arq = fopen(arqChamadas,"r"); // Arquivo de leitura de chamadas
-    // Setup dos elevadores
-    for(i = 0; i < numElevadores; i++)
+    elevadores = (Elevador *) malloc(numElevadores * sizeof(Elevador)); // Aloca vetor de struct Elevador
+    andares = (Andar *) malloc(numAndares * sizeof(Andar)); // Aloca vetor de struct Andar
+    arq = fopen(arqChamadas,"r"); // Arquivo de leitura de chamadas
+    tempo = 0;
+    // Globaliza os parâmetros
+    numAndares = numA;
+    numElevadores = numE;
+    capElevador = cap;
+    system("cls");
+    // Setup inicial dos elevadores e andares
+    setupElevadores();
+    setupAndares();
+    while(tempo <= TEMPO_MAX)
     {
-        elevadores[i].andarAtual = 0; // Começam no térreo
-        elevadores[i].totalPassageiros = 0; // Inicializa o total de passageiros de cada elevador
-        elevadores[i].numPassageiros = 0;
-        elevadores[i].sentido = SUBINDO;
-        elevadores[i].chamadas = (Chamada *) calloc(capElevador,sizeof(Chamada));
-        elevadores[i].capMax = capElevador;
-        elevadores[i].entreAndares = 0;
-    }
-    // Inicio do loop de chamadas
-
-    while (tempoDecorrido <= TEMPO_MAX && pegaChamadas(&call,ORIGEM_CHAMADAS,arq))
-    {
-        delegaElevador(call, elevadores, numElevadores);
-        while(tempoDecorrido < call.tempoInicial)
+        if(pegaChamadas(ORIGEM_CHAMADAS))
         {
-            printf("\nTempo decorrido: %d Andar Atual: %d\n",tempoDecorrido++,elevadores[0].andarAtual);
-            moveElevadores(elevadores, numElevadores);
+            while(tempo < call.tempoInicial)
+            {
+                moveElevadores();
+                tempo++;
+            }
+            posicionaChamada();
         }
-
-        //printf("Tempo decorrido: %d\n",tempoDecorrido);
+        tempo++;
     }
 
-    // Fim do loop
     putchar('\n');
     system("pause");
     //animaSDL();
 
     // Libera memória utilizada e fechar arquivos utilizados
+    fechaSimulacao();
+}
+/*------------------------------------------------------------------------------------------------*/
+
+/* Funções do Simulador */
+void setupElevadores()
+{
+    int i;
     for(i = 0; i < numElevadores; i++)
     {
-        free(elevadores[i].chamadas);
-        free(elevadores);
-        fclose(arq);
+        elevadores[i].andarAtual = 0; // Começam no térreo
+        elevadores[i].andarSelect = (bool *) calloc(numAndares,sizeof(bool)); // Vetor de booleanos que representa as teclas selecionadas dentro do elevador
+        elevadores[i].totalP = 0; // Inicializa o total de passageiros de cada elevador
+        elevadores[i].numP = 0;  // Número atual de passageiros
+        elevadores[i].sentido = SUBINDO;
+        elevadores[i].entreAndares = 0;
     }
 }
 
-bool pegaChamadas(Chamada * c, int origem, FILE * arq)
+void setupAndares()
+{
+    int i;
+    for(i = 0; i < numAndares; i++)
+    {
+        iniciaVetor(&andares[i].vCall,5);
+        andares[i].temChamada = false;
+    }
+}
+
+void fechaSimulacao()
+{
+    int i;
+    for(i = 0; i < numElevadores; i++)
+        limpaVetor(&elevadores[i].vCall);
+    free(elevadores);
+    elevadores = NULL;
+    fclose(arq);
+}
+
+bool pegaChamadas(int origem)
 {
     bool status = true;
     int andarOrigem,andarDestino,tempoCall;
@@ -169,9 +204,9 @@ bool pegaChamadas(Chamada * c, int origem, FILE * arq)
     case 2:
         if(fscanf(arq,"%d|%d|%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
         {
-            c->andarOrigem = andarOrigem;
-            c->andarDestino = andarDestino;
-            c->tempoInicial = tempoCall;
+            call.andarOrigem = andarOrigem;
+            call.andarDestino = andarDestino;
+            call.tempoInicial = tempoCall;
             status = true;
         }
         else
@@ -181,34 +216,69 @@ bool pegaChamadas(Chamada * c, int origem, FILE * arq)
     return status;
 }
 
-void delegaElevador(Chamada c, Elevador * elevadores, int numElevadores)
-{
-    elevadores[0].andarDestino = 10;
-    elevadores[0].numPassageiros = 1;
-    elevadores[0].totalPassageiros++;
-}
-
-int moveElevadores(Elevador * e, int numElevadores)
+int moveElevadores()
 {
     int i;
     for(i = 0; i < numElevadores; i++)
     {
-        if(e[i].numPassageiros > 0)
+        if(elevadores[i].numP > 0)
         {
-            if(++e[i].entreAndares == 5)
+            if(++elevadores[i].entreAndares == 5)
             {
-                if(e[i].sentido == SUBINDO)
-                    e[i].andarAtual++;
+                if(elevadores[i].sentido == SUBINDO)
+                    elevadores[i].andarAtual++;
                 else
-                    e[i].andarAtual--;
-                e[i].entreAndares = 0;
+                    elevadores[i].andarAtual--;
+                elevadores[i].entreAndares = 0;
             }
-            if(e[i].andarAtual == e[i].andarDestino)
-                printf("\nChegou!, D: %d\n",e[i].andarDestino);
+            if(elevadores[i].andarAtual == elevadores[i].andarDestino)
+                printf("Chegou!\n");
         }
     }
     return 0;
 }
+
+void posicionaChamada()
+{
+    insereChamada(&andares[call.andarOrigem].vCall, call);
+    andares[call.andarOrigem].temChamada = true;
+}
+/*------------------------------------------------------------------------------------------------*/
+
+/* Funções do Vetor_Chamada */
+void iniciaVetor(Vetor_Chamada * c, size_t tamInicial)
+{
+    c -> chamadas = (Chamada *) malloc(sizeof(Chamada) * tamInicial);
+    c -> qntd = 0;
+    c -> tam = tamInicial;
+}
+
+void insereChamada(Vetor_Chamada * c, Chamada call)
+{
+    if(c -> qntd == c -> tam)
+    {
+        c -> tam *= 2;
+        c -> chamadas = (Chamada *) realloc(c->chamadas,c->tam*sizeof(Chamada));
+    }
+    c->chamadas[c->qntd++] = call;
+}
+
+void limpaVetor(Vetor_Chamada * c)
+{
+    free(c->chamadas);
+    c->chamadas = NULL;
+    c->qntd = c->tam = 0;
+}
+
+void removeChamada(Vetor_Chamada * c, int index)
+{
+    int i;
+    for(i = index; i < c->qntd - 2; i++)
+        c->chamadas[i+1] = c-> chamadas[i];
+    c->qntd--;
+}
+
+/*------------------------------------------------------------------------------------------------*/
 
 /* Funções para o console*/
 

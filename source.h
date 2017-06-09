@@ -16,7 +16,7 @@ static const bool SUBINDO = true;
 static const int TEMPO_ABERTURA = 1;
 static const int TEMPO_FECHAMENTO = 1;
 static const int TEMPO_POR_ANDAR = 5;
-static const int TEMPO_MAX = 600;
+static const int TEMPO_MAX = 50;
 static const int NUM_ANDARES_STD = 5;
 static const int NUM_ELEVADORES_STD = 2;
 static const int CAP_ELEVADOR_STD = 10;
@@ -34,15 +34,28 @@ typedef struct
 
 typedef struct
 {
+    Chamada * chamadas;
+    size_t qntd;
+    size_t tam;
+} Vetor_Chamada;
+
+typedef struct
+{
+    Vetor_Chamada vCall;
     bool sentido;         // Sentido: Subindo ou Descendo
-    int numPassageiros;  // Quantidade atual de passageiros
-    int totalPassageiros; // Total de passageiros transportados
+    bool * andarSelect;   // Andares selecionados
+    int numP;             // Quantidade atual de passageiros
+    int totalP;           // Total de passageiros transportados
     int andarDestino;     // Andar destino atual
     int andarAtual;       // Andar atual
-    int capMax;
     int entreAndares;
-    Chamada * chamadas;
 } Elevador;
+
+typedef struct
+{
+    Vetor_Chamada vCall;
+    bool temChamada;
+} Andar;
 
 // Funções de implementação do simulador
 
@@ -50,19 +63,32 @@ int mostraMenu();
 
 void instrucoes();
 
-void simula(int numElevadores, int numAndares,int capMaxElevador);
+void simula(int numE, int numA, int cap);
 
-void estatisticas();
+void mostraEstatisticas();
 
 void defineParametros(int * elevadores, int * andares, int * cap);
 
-void delegaElevador(Chamada c, Elevador * e, int numElevadores);
+int moveElevadores();
 
-int moveElevadores(Elevador * e, int numElevadores);
+bool pegaChamadas();
 
-bool geraEstatisticas();
+void posicionaChamada();
 
-bool pegaChamadas(Chamada * c, int origem, FILE * arq);
+void setupAndares();
+
+void setupElevadores();
+
+void fechaSimulacao();
+
+void iniciaVetor(Vetor_Chamada * c, size_t tamInicial);
+
+void insereChamada(Vetor_Chamada * c, Chamada call);
+
+void removeChamada(Vetor_Chamada * c, int index);
+
+void limpaVetor(Vetor_Chamada * c);
+
 
 // Função do console
 

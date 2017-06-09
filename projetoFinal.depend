@@ -663,31 +663,29 @@
 	"begin_code.h"
 	"close_code.h"
 
-1496421284 source:e:\dropbox\fp\projetofinalfp1\main.c
+1496938319 source:e:\dropbox\fp\projetofinalfp1\main.c
 	"source.h"
 	<locale.h>
 
-1496806188 e:\dropbox\fp\projetofinalfp1\source.h
+1496981759 e:\dropbox\fp\projetofinalfp1\source.h
 	<stdbool.h>
 	<stdio.h>
 	<stdlib.h>
 
-1496808178 source:e:\dropbox\fp\projetofinalfp1\source.c
+1496981746 source:e:\dropbox\fp\projetofinalfp1\source.c
 	"source.h"
 	"sdl_funcoes.h"
 	<conio.h>
 	<windows.h>
 
-1496421284 source:c:\users\smiam\dropbox\fp\projetofinalfp1\main.c
+1496938319 source:c:\users\smiam\dropbox\fp\projetofinalfp1\main.c
 	"source.h"
 	<locale.h>
 
-1496424386 c:\users\smiam\dropbox\fp\projetofinalfp1\source.h
+1496950534 c:\users\smiam\dropbox\fp\projetofinalfp1\source.h
 	<stdbool.h>
-	<SDL.h>
 	<stdio.h>
 	<stdlib.h>
-	<SDL_image.h>
 
 1476935894 c:\users\smiam\dropbox\fp\sdl2-2.0.5\i686-w64-mingw32\include\sdl2\sdl.h
 	"SDL_main.h"
@@ -1008,8 +1006,9 @@
 	"begin_code.h"
 	"close_code.h"
 
-1496424133 source:c:\users\smiam\dropbox\fp\projetofinalfp1\source.c
+1496944909 source:c:\users\smiam\dropbox\fp\projetofinalfp1\source.c
 	"source.h"
+	"sdl_funcoes.h"
 	<conio.h>
 	<windows.h>
 
@@ -1029,6 +1028,14 @@
 	"sdl_funcoes.h"
 
 1496803330 e:\dropbox\fp\projetofinalfp1\sdl_funcoes.h
+	<SDL_image.h>
+	<SDL.h>
+	<stdbool.h>
+
+1496803410 source:c:\users\smiam\dropbox\fp\projetofinalfp1\sdl_funcoes.c
+	"sdl_funcoes.h"
+
+1496803330 c:\users\smiam\dropbox\fp\projetofinalfp1\sdl_funcoes.h
 	<SDL_image.h>
 	<SDL.h>
 	<stdbool.h>

@@ -23,7 +23,7 @@ int main(int argc, char **argv)
             simula(numElevadores,numAndares,capElevador);
             break;
         case 4:
-            estatisticas();
+            mostraEstatisticas();
             break;
         case 5:
             sair = true;
