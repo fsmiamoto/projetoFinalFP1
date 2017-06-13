@@ -1,0 +1,3 @@
+T: 11 | Elevador chamado no andar 2
+T: 50 | Elevador chamado no andar 4
+T: 80 | Elevador chamado no andar 8

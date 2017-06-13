@@ -1,5 +1,6 @@
 #include "sdl_funcoes.h"
-
+#include <stdio.h>
+#include <stdlib.h>
 /* Funcões da biblioteca SDL */
 
 SDL_Window * janela;

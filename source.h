@@ -10,26 +10,32 @@
 static const int ORIGEM_CHAMADAS = 2; // 1: Aleatório 2: Arquivo 3: Teclado
 
 // Constantes utilizadas no simulador
+
 static const bool DESCENDO = false;
 static const bool SUBINDO = true;
-
 static const int TEMPO_ABERTURA = 1;
 static const int TEMPO_FECHAMENTO = 1;
 static const int TEMPO_POR_ANDAR = 5;
-static const int TEMPO_MAX = 50;
-static const int NUM_ANDARES_STD = 5;
-static const int NUM_ELEVADORES_STD = 2;
+static const int TEMPO_MAX = 500;
+static const int NUM_ANDARES_STD = 10;
+static const int NUM_ELEVADORES_STD = 1;
 static const int CAP_ELEVADOR_STD = 10;
-static const char * arqChamadas = "chamadas.txt";
+
+// Nome dos arquivos utilizados:
+static const char * nomeArqChamadas = "chamadas.txt";
+static const char * nomeArqLog = "log.txt";
 
 // Structs
 
 typedef struct
 {
-    int tempoInicial;
-    int tempoFinal;
+    int ID;           // Identificação do passageiro
+    int tempoInicial; // Instante em que a chamada foi realizada
+    int tempoSaida;   // Instante em que o passageiro entrou no elevador
+    int tempoEntrada; // Instante em que o passageiro saiu do elevador
     int andarOrigem;
     int andarDestino;
+    int elevadorDesignado;
 } Chamada;
 
 typedef struct
@@ -43,10 +49,10 @@ typedef struct
 {
     Vetor_Chamada vCall;
     bool sentido;         // Sentido: Subindo ou Descendo
+    bool estaMovendo;
     bool * andarSelect;   // Andares selecionados
     int numP;             // Quantidade atual de passageiros
     int totalP;           // Total de passageiros transportados
-    int andarDestino;     // Andar destino atual
     int andarAtual;       // Andar atual
     int entreAndares;
 } Elevador;
@@ -68,6 +74,14 @@ void simula(int numE, int numA, int cap);
 void mostraEstatisticas();
 
 void defineParametros(int * elevadores, int * andares, int * cap);
+
+void defineSentido();
+
+void defineElevador();
+
+void geraEstatisticas();
+
+void entraSai();
 
 int moveElevadores();
 

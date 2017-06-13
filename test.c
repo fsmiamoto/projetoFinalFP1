@@ -31,3 +31,24 @@
         }
     }
 */
+
+int j;
+            if(elevadores[i].sentido == SUBINDO)
+            {
+               for(j = elevadores[i].andarAtual; j <= numAndares; j++)
+                    if(elevadores[i].andarSelect[j])
+                    {
+                        elevadores[i].andarDestino = j;
+                        elevadores[i].estaMovendo = true;
+                        printf("Andar: %d\n",j);
+                    }
+            }
+            else
+            {
+                for(j = elevadores[i].andarAtual; j >= 0; j--)
+                    if(elevadores[i].andarSelect[j])
+                    {
+                        elevadores[i].andarDestino = j;
+                        elevadores[i].estaMovendo = true;
+                    }
+            }
