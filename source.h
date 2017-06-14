@@ -11,15 +11,18 @@ static const int ORIGEM_CHAMADAS = 2; // 1: Aleatório 2: Arquivo 3: Teclado
 
 // Constantes utilizadas no simulador
 
-static const bool DESCENDO = false;
+static const bool DESCENDO = false;   // Constantes booleanas arbitrárias
 static const bool SUBINDO = true;
-static const int TEMPO_ABERTURA = 1;
-static const int TEMPO_FECHAMENTO = 1;
-static const int TEMPO_POR_ANDAR = 5;
-static const int TEMPO_MAX = 500;
-static const int NUM_ANDARES_STD = 10;
-static const int NUM_ELEVADORES_STD = 1;
-static const int CAP_ELEVADOR_STD = 10;
+static const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
+static const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
+static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
+static const int TEMPO_MAX = 500;   // Tempo máximo de simulação
+static const int ANDARES_MAX = 100; // Número máximo de andares
+static const int CAP_MAX = 16;      // Maior capacidade possível
+static const int ELEVADORES_MAX = 5; // Número máximo de elevadores
+static const int NUM_ANDARES_STD = 10; // Número padrão de andares
+static const int NUM_ELEVADORES_STD = 1; // Número padrão de elevadores
+static const int CAP_ELEVADOR_STD = 10; // Capacidade máxima padrão dos elevadores
 
 // Nome dos arquivos utilizados:
 static const char * nomeArqChamadas = "chamadas.txt";
@@ -35,19 +38,19 @@ typedef struct
     int tempoEntrada; // Instante em que o passageiro saiu do elevador
     int andarOrigem;
     int andarDestino;
-    int elevadorDesignado;
+    int elevadorDesignado; // Número de identificação do elevador que irá atender a chamada
 } Chamada;
 
 typedef struct
 {
-    Chamada * chamadas;
-    size_t qntd;
-    size_t tam;
+    Chamada * chamadas; // Vetor de chamadas que é alocado dinamicamente pela função iniciaVetor()
+    size_t qntd; // Representa a quantidade de elementos atual do vetor;
+    size_t tam; // Representa o tamanho total do vetor, que pode ser modificado em tempo de execução
 } Vetor_Chamada;
 
 typedef struct
 {
-    Vetor_Chamada vCall;
+    Vetor_Chamada vCall;  // Vetor dinâmico de chamadas
     bool sentido;         // Sentido: Subindo ou Descendo
     bool estaMovendo;
     bool * andarSelect;   // Andares selecionados
@@ -93,7 +96,13 @@ void setupAndares();
 
 void setupElevadores();
 
+void abreArquivos();
+
 void fechaSimulacao();
+
+void alocaEA();
+
+void pausa();
 
 void iniciaVetor(Vetor_Chamada * c, size_t tamInicial);
 

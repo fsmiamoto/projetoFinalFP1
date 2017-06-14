@@ -9,8 +9,8 @@
 int tempo;
 int idChamada;
 int numAndares,numElevadores,capElevador;
-Elevador * elevadores;
-Andar * andares;
+Elevador * elevadores = NULL;
+Andar * andares = NULL;
 Chamada call;
 Vetor_Chamada chamadasConcluidas;
 FILE * arqChamadas;
@@ -23,7 +23,7 @@ int mostraMenu(void)
     char escolha;
     bool valido = false;
     system("cls");
-    printf("SimEle - V 1.0\n\n");
+    printf("Simulador para controle de elevadores\n\n");
     printf("1) Instruções\n2) Definição de parâmetros\n3) Iniciar simulação\n4) Estatistícas de simulação\n5) Sair\n");
     while(!valido)
     {
@@ -73,6 +73,7 @@ void instrucoes()
 void defineParametros(int * elevadores, int * andares, int * cap)
 {
     char c = 0;
+    bool flag = false;
     while(c != 'v')
     {
         system("cls");
@@ -86,24 +87,51 @@ void defineParametros(int * elevadores, int * andares, int * cap)
         case '1':
             system("cls");
             mostraCursor(true);
-            printf("Número de andares: ");
-            scanf("%d",&buf);
+            flag = false;
+            do
+            {
+                printf("Número de andares: ");
+                scanf("%d",&buf);
+                if(buf > 0 && buf <= ANDARES_MAX)
+                    flag = true;
+                else
+                    printf("Entrada inválida!\n");
+            }
+            while(!flag);
             * andares = buf;
             mostraCursor(false);
             break;
         case '2':
             system("cls");
             mostraCursor(true);
-            printf("Número de elevadores: ");
-            scanf("%d",&buf);
+            flag = false;
+            do
+            {
+                printf("Número de elevadores: ");
+                scanf("%d",&buf);
+                if(buf > 0 && buf <= ELEVADORES_MAX)
+                    flag = true;
+                else
+                    printf("Entrada inválida!\n");
+            }
+            while(!flag);
             * elevadores = buf;
             mostraCursor(false);
             break;
         case '3':
             system("cls");
             mostraCursor(true);
-            printf("Capacidade máxima por elevador: ");
-            scanf("%d",&buf);
+            flag = false;
+            do
+            {
+                printf("Capacidade máxima por elevador: ");
+                scanf("%d",&buf);
+                if(buf > 0 && buf <= CAP_MAX)
+                    flag = true;
+                else
+                    printf("Entrada inválida!\n");
+            }
+            while(!flag);
             * cap = buf;
             mostraCursor(false);
             break;
@@ -127,18 +155,18 @@ void mostraEstatisticas()
 // Função que inicia a simulação
 void simula(int numE, int numA,int cap)
 {
-    // Aloca um vetor com o número de elevadores da struct Elevadorgene
-    elevadores = (Elevador *) malloc(numElevadores * sizeof(Elevador)); // Aloca vetor de struct Elevador
-    andares = (Andar *) malloc((numAndares+1) * sizeof(Andar)); // Aloca vetor de struct Andar
-    arqChamadas = fopen(nomeArqChamadas,"r"); // Arquivo de leitura de chamadas
-    fseek(arqChamadas,47,SEEK_SET); // Ignora primeira linha do arquivo CSV
-    arqLog = fopen(nomeArqLog,"w");
-    tempo = 0;
-    idChamada = 0;
     // Globaliza os parâmetros
     numAndares = numA;
     numElevadores = numE;
     capElevador = cap;
+    // Seta tempo e contador de identificação de chamadas para zero
+    tempo = 0;
+    idChamada = 0;
+    // Aloca um vetor com o número de elevadores da struct Elevadorgene
+    alocaEA();
+    // Abre os arquivos necessários
+    abreArquivos();
+    // Limpa a tela
     system("cls");
     // Setup inicial dos elevadores e andares
     setupElevadores();
@@ -168,8 +196,7 @@ void simula(int numE, int numA,int cap)
         }
     }
     geraEstatisticas();
-    putchar('\n');
-    system("pause");
+    pausa();
     //animaSDL();
     // Libera memória utilizada e fechar arquivos utilizados
     fechaSimulacao();
@@ -222,6 +249,7 @@ void fechaSimulacao()
 bool pegaChamadas(int origem)
 {
     bool status = true;
+    bool flag = false;
     int andarOrigem,andarDestino,tempoCall;
     switch(origem)
     {
@@ -249,6 +277,7 @@ bool pegaChamadas(int origem)
         break;
     //Arquivo
     case 2:
+        // Verifica por fim de arquivo
         if(fscanf(arqChamadas,"%d,%d,%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
             status = true;
         else
@@ -256,16 +285,46 @@ bool pegaChamadas(int origem)
         break;
     // Teclado
     case 3:
-        printf("Insira o tempo da chamada: ");
-        scanf("%d",&tempoCall);
-        printf("Insira o andar de origem: ");
-        scanf("%d",&andarOrigem);
-        printf("Insira o tempo de destino: ");
-        scanf("%d",&andarDestino);
+        // Loopa até obter entrada válida
+        mostraCursor(true);
+        do
+        {
+            printf("Insira o tempo da chamada: ");
+            scanf("%d",&tempoCall);
+            if(tempoCall <= TEMPO_MAX && tempoCall > tempo)
+                flag = true;
+            else
+                printf("Entrada inválida\n");
+        }
+        while(!flag);
+        flag = false;
+        do
+        {
+            printf("Insira o andar de origem: ");
+            scanf("%d",&andarOrigem);
+            if(andarOrigem >= 0 && andarOrigem <= numAndares)
+                flag = true;
+            else
+                printf("Entrada inválida!\n");
+        }
+        while(!flag);
+        flag = false;
+        do
+        {
+            printf("Insira o andar de destino: ");
+            scanf("%d",&andarDestino);
+            if(andarDestino >= 0 && andarDestino <= numAndares && andarDestino != andarOrigem)
+                flag = true;
+            else
+                printf("Entrada inválida!\n");
+        }
+        while(!flag);
         system("cls");
+        mostraCursor(false);
         status = true;
         break;
     }
+    // Atributos da chamada são setados
     call.andarOrigem = andarOrigem;
     call.andarDestino = andarDestino;
     call.tempoInicial = tempoCall;
@@ -410,12 +469,58 @@ void geraEstatisticas()
     printf("\nNúmero médio de passageiros por segundo: %.5f\n\n",numPassageirosMed);
 }
 
+// Função para abertura dos arquivos necessários que checa por erros
+void abreArquivos()
+{
+    arqChamadas = fopen(nomeArqChamadas,"r"); // Arquivo de leitura de chamadas
+    if(arqChamadas == NULL)
+    {
+        perror("\nArquivo de chamadas - O seguinte erro ocorreu: ");
+        exit(1);
+    }
+    arqLog = fopen(nomeArqLog,"w");
+    if(arqLog == NULL)
+    {
+        perror("\nArquivo de logs - O seguinte erro ocorreu: ");
+        exit(1);
+    }
+    fseek(arqChamadas,47,SEEK_SET); // Ignora primeira linha do arquivo CSV
+}
+
+// Função de alocação dos vetores de andares e elevadores
+void alocaEA()
+{
+    elevadores = (Elevador *) malloc(numElevadores * sizeof(Elevador)); // Aloca vetor de struct Elevador
+    if(elevadores == NULL)
+    {
+        fprintf(stderr, "Falha ao alocar vetor de elevadores\n");
+        exit(1);
+    }
+    andares = (Andar *) malloc((numAndares+1) * sizeof(Andar)); // Aloca vetor de struct Andar
+    if(andares == NULL)
+    {
+        fprintf(stderr, "Falha ao alocar vetor de elevadores\n");
+        exit(1);
+    }
+}
+
+void pausa()
+{
+    fflush(stdin);
+    printf("\nPressione qualquer tecla para continuar....\n");
+    getch();
+}
 /*------------------------------------------------------------------------------------------------*/
 
 /* Funções do Vetor_Chamada */
 void iniciaVetor(Vetor_Chamada * c, size_t tamInicial)
 {
     c -> chamadas = (Chamada *) calloc(tamInicial,sizeof(Chamada));
+    if(c->chamadas == NULL)
+    {
+        fprintf(stderr,"Erro ao iniciar vetor de chamadas! \n");
+        exit(1);
+    }
     c -> qntd = 0;
     c -> tam = tamInicial;
 }
@@ -426,6 +531,11 @@ void insereChamada(Vetor_Chamada * c, Chamada call)
     {
         c -> tam *= 2;
         c -> chamadas = (Chamada *) realloc(c->chamadas,c->tam*sizeof(Chamada));
+        if(c->chamadas == NULL)
+        {
+            fprintf(stderr,"Erro ao aumentar vetor de chamadas!\n");
+            exit(1);
+        }
     }
     c->chamadas[c->qntd++] = call;
 }
