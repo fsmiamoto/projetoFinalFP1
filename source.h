@@ -16,7 +16,7 @@ static const bool SUBINDO = true;
 static const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
 static const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
 static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
-static const int TEMPO_MAX = 500;   // Tempo máximo de simulação
+static const int TEMPO_MAX = 350;   // Tempo máximo de simulação
 static const int ANDARES_MAX = 100; // Número máximo de andares
 static const int CAP_MAX = 16;      // Maior capacidade possível
 static const int ELEVADORES_MAX = 5; // Número máximo de elevadores
@@ -34,11 +34,11 @@ typedef struct
 {
     int ID;           // Identificação do passageiro
     int tempoInicial; // Instante em que a chamada foi realizada
-    int tempoSaida;   // Instante em que o passageiro entrou no elevador
-    int tempoEntrada; // Instante em que o passageiro saiu do elevador
+    int tempoEntrada;   // Instante em que o passageiro entrou no elevador
+    int tempoSaida; // Instante em que o passageiro saiu do elevador
     int andarOrigem;
     int andarDestino;
-    int elevadorDesignado; // Número de identificação do elevador que irá atender a chamada
+    bool sentido;
 } Chamada;
 
 typedef struct
@@ -52,8 +52,8 @@ typedef struct
 {
     Vetor_Chamada vCall;  // Vetor dinâmico de chamadas
     bool sentido;         // Sentido: Subindo ou Descendo
-    bool estaMovendo;
-    bool * andarSelect;   // Andares selecionados
+    bool estaAtendendo;   // Define se o elevador está atendendo alguma chamada
+    bool * andarSelect;   // Andares selecionados internos
     int numP;             // Quantidade atual de passageiros
     int totalP;           // Total de passageiros transportados
     int andarAtual;       // Andar atual
@@ -84,7 +84,11 @@ void defineElevador();
 
 void geraEstatisticas();
 
-void entraSai();
+void entraSai(int ID);
+
+void entra(int ID);
+
+void sai(int ID);
 
 int moveElevadores();
 

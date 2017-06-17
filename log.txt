@@ -1,5 +1,11 @@
-T: 11 | Elevador chamado no andar 2
-T: 50 | Elevador chamado no andar 4
-T: 80 | Elevador chamado no andar 8
-T: 100 | Elevador chamado no andar 9
-T: 150 | Elevador chamado no andar 3
+T: 41 | Elevador chamado no andar 54
+T: 43 | Elevador chamado no andar 30
+T: 88 | Elevador chamado no andar 87
+T: 93 | Elevador chamado no andar 35
+T: 121 | Elevador chamado no andar 35
+T: 168 | Elevador chamado no andar 63
+T: 205 | Elevador chamado no andar 20
+T: 211 | Elevador chamado no andar 23
+T: 268 | Elevador chamado no andar 48
+T: 325 | Elevador chamado no andar 70
+T: 380 | Elevador chamado no andar 57
