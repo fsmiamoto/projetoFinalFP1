@@ -35,13 +35,13 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="main.c">
+		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="source.c">
+		<Unit filename="src/source.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="source.h" />
+		<Unit filename="src/source.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

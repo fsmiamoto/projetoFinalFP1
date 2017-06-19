@@ -11,7 +11,7 @@
 
 // Flags do programa
 
-static const int ORIGEM_CHAMADAS = 2; // 1: Aleatório 2: Arquivo 3: Teclado
+static const int ORIGEM_CHAMADAS = 1; // 1: Aleatório 2: Arquivo 3: Teclado
 
 // Constantes utilizadas no simulador
 
@@ -20,13 +20,16 @@ static const bool SUBINDO = true;
 static const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
 static const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
 static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
-static const int TEMPO_MAX = 300;   // Tempo máximo de simulação
+static const int TEMPO_MAX = 500;   // Tempo máximo de simulação
 static const int ANDARES_MAX = 200; // Número máximo de andares
 static const int CAP_MAX = 20;      // Maior capacidade possível
 static const int ELEVADORES_MAX = 5; // Número máximo de elevadores
 static const int NUM_ANDARES_STD = 12; // Número padrão de andares
 static const int NUM_ELEVADORES_STD = 2; // Número padrão de elevadores
-static const int CAP_ELEVADOR_STD = 12; // Capacidade máxima padrão dos elevadores
+static const int CAP_ELEVADOR_STD = 8; // Capacidade máxima padrão dos elevadores
+static const char * nomeArqChamadas = ".\\arquivos\\chamadas.txt";
+static const char * nomeArqLog = ".\\arquivos\\log.txt";
+static const char * nomeArqStat = ".\\arquivos\\estatisticas.txt";
 
 // Structs
 
@@ -105,10 +108,6 @@ void alocaEA();
 
 void animacao();
 
-void printaEspacos(int qntd);
-
-void pausa();
-
 // Funções para a struct Vetor_Chamada
 
 void iniciaVetor(Vetor_Chamada * c, size_t tamInicial);
@@ -123,8 +122,14 @@ void limpaVetor(Vetor_Chamada * c);
 
 void ordena(int * vec, int * index, int tam);
 
+int inteiroRandom(int baixo, int alto);
+
+void printaEspacos(int qntd);
+
 // Função do console
 
 void mostraCursor(bool flag);
+
+void pausa();
 
 #endif

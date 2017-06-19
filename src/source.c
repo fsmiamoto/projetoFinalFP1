@@ -2,7 +2,6 @@
 
 // Variáveis globais
 int tempo, idChamada, cont, numAndares, numElevadores, capElevador;
-int * distancias, * id;
 Elevador * elevadores = NULL;
 Andar * andares = NULL;
 Chamada call;
@@ -10,9 +9,6 @@ Vetor_Chamada chamadasConcluidas;
 FILE * arqChamadas;
 FILE * arqLog;
 FILE * arqStat;
-const char * nomeArqChamadas = ".\\arquivos\\chamadas.txt";
-const char * nomeArqLog = ".\\arquivos\\log.txt";
-const char * nomeArqStat = ".\\arquivos\\estatisticas.txt";
 
 /* Funções do Menu */
 
@@ -163,6 +159,7 @@ void mostraEstatisticas()
 // Função que inicia a simulação
 void simula(int numE, int numA,int cap)
 {
+    bool sair = false;
     // Globaliza os parâmetros
     numAndares = numA;
     numElevadores = numE;
@@ -180,7 +177,8 @@ void simula(int numE, int numA,int cap)
     // Setup inicial dos elevadores e andares
     setupElevadores();
     setupAndares();
-    while(tempo <= TEMPO_MAX)
+    iniciaVetor(&chamadasConcluidas,5);
+    while(tempo <= TEMPO_MAX && !sair)
     {
         if(pegaChamadas(ORIGEM_CHAMADAS))
         {
@@ -188,7 +186,6 @@ void simula(int numE, int numA,int cap)
             {
                 moveElevadores();
             }
-
             defineElevador(call);
             posicionaChamada();
         }
@@ -196,13 +193,12 @@ void simula(int numE, int numA,int cap)
         {
             moveElevadores();
         }
-
     }
     geraEstatisticas();
+    pausa();
     //animacao();
     // Libera memória utilizada e fechar arquivos utilizados
     fechaSimulacao();
-    pausa();
 }
 
 /*------------------------------------------------------------------------------------------------*/
@@ -248,8 +244,6 @@ void fechaSimulacao()
         limpaVetor(&andares[i].vCall);
     free(elevadores);
     free(andares);
-    free(distancias);
-    free(id);
     andares = NULL;
     elevadores = NULL;
     limpaVetor(&chamadasConcluidas);
@@ -268,7 +262,6 @@ bool pegaChamadas(int origem)
     {
     //Random
     case 1:
-        srand(time(NULL));
         if(tempo < TEMPO_MAX - 1)
         {
             do
@@ -282,7 +275,6 @@ bool pegaChamadas(int origem)
                 andarDestino = rand() % numAndares;
             }
             while(andarDestino == andarOrigem);
-            printf("Tempo Random: %d\n",tempoCall);
             status = true;
         }
         else
@@ -292,7 +284,15 @@ bool pegaChamadas(int origem)
     case 2:
         // Verifica por fim de arquivo
         if(fscanf(arqChamadas,"%d,%d,%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
-            status = true;
+        {
+             status = true;
+             if(tempoCall < 0 || tempoCall > TEMPO_MAX)
+                status = false;
+             if(andarOrigem < 0 || andarOrigem > numAndares)
+                status = false;
+             if(andarDestino < 0 || andarDestino > numAndares)
+                status = false;
+        }
         else
             status = false;
         break;
@@ -366,9 +366,9 @@ int moveElevadores()
             // Verifica se o tempo por andar foi decorrido e então altera o andar atual
             if(++elevadores[i].entreAndares == TEMPO_POR_ANDAR)
             {
-                if(elevadores[i].sentido == SUBINDO)
+                if(elevadores[i].sentido == SUBINDO && elevadores[i].andarAtual < numAndares)
                     elevadores[i].andarAtual++;
-                else
+                else if(elevadores[i].andarAtual > 0)
                     elevadores[i].andarAtual--;
                 elevadores[i].entreAndares = 0;
             }
@@ -435,14 +435,14 @@ void defineElevador(Chamada c)
 {
     int i, escolhido;
     // Aloca vetores para uso no cálculo das distancias
-    distancias = (int *) calloc(numElevadores,sizeof(int));
+    int * distancias = (int *) calloc(numElevadores,sizeof(int));
     if(distancias == NULL)
     {
         fprintf(stderr, "Falha ao alocar vetor de distancias!\n");
         exit(1);
     }
     // Vetor auxiliar para identificar as distâncias
-    id = (int *) calloc(numElevadores,sizeof(int));
+    int * id = (int *) calloc(numElevadores,sizeof(int));
     if(id == NULL)
     {
         fprintf(stderr, "Falha ao alocar vetor de identificação!\n");
@@ -513,6 +513,10 @@ void defineElevador(Chamada c)
     }
     fprintf(arqLog,"T: %d | Chamada no andar %d, atendido pelo elevador #%d\n",call.tempoInicial,call.andarOrigem,escolhido);
     printf("T: %d | Chamada no andar %d, atendido pelo elevador #%d\n",call.tempoInicial,call.andarOrigem,escolhido);
+    free(distancias);
+    free(id);
+    distancias = NULL;
+    id = NULL;
 }
 
 // Define entrada e saída de passageiros
@@ -614,10 +618,10 @@ void geraEstatisticas()
     tViagemMed /= chamadasConcluidas.qntd;
     for(i = 0; i < numElevadores; i++)
         numPassageirosMed += elevadores[i].totalP;
-    numPassageirosMed /= tempo;
+    numPassageirosMed /= numElevadores;
     printf("\nEstatísticas de simulação: \nTempo médio de espera: %.1f\nTempo máximo de espera: %.1f",tEsperaMed,tEsperaMax);
     printf("\nTempo médio de viagem: %.1f\nTempo máximo de viagem: %.1f",tViagemMed,tViagemMax);
-    printf("\nNúmero médio de passageiros por segundo: %.5f\n\n",numPassageirosMed);
+    printf("\nNúmero médio de passageiros por elevador: %.2f\n\n",numPassageirosMed);
     fprintf(arqStat,"%.1f|%.1f|%.1f|%.1f|%.5f",tEsperaMed,tEsperaMax,tViagemMed,tViagemMax,numPassageirosMed);
 }
 
@@ -648,13 +652,13 @@ void abreArquivos()
 // Função de alocação dos vetores de andares e elevadores
 void alocaEA()
 {
-    elevadores = (Elevador *) malloc(numElevadores * sizeof(Elevador)); // Aloca vetor de struct Elevador
+    elevadores = (Elevador *) calloc(numElevadores,sizeof(Elevador)); // Aloca vetor de struct Elevador
     if(elevadores == NULL)
     {
         fprintf(stderr, "Falha ao alocar vetor de elevadores\n");
         exit(1);
     }
-    andares = (Andar *) malloc((numAndares+1) * sizeof(Andar)); // Aloca vetor de struct Andar
+    andares = (Andar *) calloc((numAndares+1),sizeof(Andar)); // Aloca vetor de struct Andar
     if(andares == NULL)
     {
         fprintf(stderr, "Falha ao alocar vetor de elevadores\n");
