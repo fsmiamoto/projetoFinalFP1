@@ -10,9 +10,9 @@ Vetor_Chamada chamadasConcluidas;
 FILE * arqChamadas;
 FILE * arqLog;
 FILE * arqStat;
-const char * nomeArqChamadas = "chamadas.txt";
-const char * nomeArqLog = "log.txt";
-const char * nomeArqStat = "estatisticas.txt";
+const char * nomeArqChamadas = ".\\arquivos\\chamadas.txt";
+const char * nomeArqLog = ".\\arquivos\\log.txt";
+const char * nomeArqStat = ".\\arquivos\\estatisticas.txt";
 
 /* Funções do Menu */
 
