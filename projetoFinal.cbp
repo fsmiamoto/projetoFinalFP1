@@ -15,16 +15,7 @@
 					<Add option="-Wall" />
 					<Add option="-std=c++11" />
 					<Add option="-g" />
-					<Add directory="$(#sdl2.include)/SDL2" />
 				</Compiler>
-				<Linker>
-					<Add library="mingw32" />
-					<Add library="SDL2main" />
-					<Add library="SDL2" />
-					<Add library="SDL2_image" />
-					<Add directory="$(#sdl2.lib)" />
-					<Add directory="$(#sdl2.bin)" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/projetoFinal" prefix_auto="1" extension_auto="1" />
@@ -35,16 +26,9 @@
 					<Add option="-O2" />
 					<Add option="-Wall" />
 					<Add option="-std=c++11" />
-					<Add directory="$(#sdl2.include)/SDL2" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="mingw32" />
-					<Add library="SDL2main" />
-					<Add library="SDL2" />
-					<Add library="SDL2_image" />
-					<Add directory="$(#sdl2.lib)" />
-					<Add directory="$(#sdl2.bin)" />
 				</Linker>
 			</Target>
 		</Build>
@@ -54,10 +38,6 @@
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="sdl_funcoes.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="sdl_funcoes.h" />
 		<Unit filename="source.c">
 			<Option compilerVar="CC" />
 		</Unit>

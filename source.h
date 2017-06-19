@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <conio.h>
+#include <windows.h>
+#include <time.h>
+#include <locale.h>
 
 // Flags do programa
 
@@ -16,17 +20,13 @@ static const bool SUBINDO = true;
 static const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
 static const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
 static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
-static const int TEMPO_MAX = 350;   // Tempo máximo de simulação
-static const int ANDARES_MAX = 100; // Número máximo de andares
-static const int CAP_MAX = 16;      // Maior capacidade possível
+static const int TEMPO_MAX = 300;   // Tempo máximo de simulação
+static const int ANDARES_MAX = 200; // Número máximo de andares
+static const int CAP_MAX = 20;      // Maior capacidade possível
 static const int ELEVADORES_MAX = 5; // Número máximo de elevadores
-static const int NUM_ANDARES_STD = 10; // Número padrão de andares
-static const int NUM_ELEVADORES_STD = 1; // Número padrão de elevadores
-static const int CAP_ELEVADOR_STD = 10; // Capacidade máxima padrão dos elevadores
-
-// Nome dos arquivos utilizados:
-static const char * nomeArqChamadas = "chamadas.txt";
-static const char * nomeArqLog = "log.txt";
+static const int NUM_ANDARES_STD = 12; // Número padrão de andares
+static const int NUM_ELEVADORES_STD = 2; // Número padrão de elevadores
+static const int CAP_ELEVADOR_STD = 12; // Capacidade máxima padrão dos elevadores
 
 // Structs
 
@@ -53,7 +53,8 @@ typedef struct
     Vetor_Chamada vCall;  // Vetor dinâmico de chamadas
     bool sentido;         // Sentido: Subindo ou Descendo
     bool estaAtendendo;   // Define se o elevador está atendendo alguma chamada
-    bool * andarSelect;   // Andares selecionados internos
+    bool * andar_sel_int; // Andares selecionados internos
+    bool * andar_sel_ext; // Andares selecionados externamente
     int numP;             // Quantidade atual de passageiros
     int totalP;           // Total de passageiros transportados
     int andarAtual;       // Andar atual
@@ -86,10 +87,6 @@ void geraEstatisticas();
 
 void entraSai(int ID);
 
-void entra(int ID);
-
-void sai(int ID);
-
 int moveElevadores();
 
 bool pegaChamadas();
@@ -106,7 +103,13 @@ void fechaSimulacao();
 
 void alocaEA();
 
+void animacao();
+
+void printaEspacos(int qntd);
+
 void pausa();
+
+// Funções para a struct Vetor_Chamada
 
 void iniciaVetor(Vetor_Chamada * c, size_t tamInicial);
 
@@ -116,6 +119,9 @@ void removeChamada(Vetor_Chamada * c, int index);
 
 void limpaVetor(Vetor_Chamada * c);
 
+// Funções auxiliares
+
+void ordena(int * vec, int * index, int tam);
 
 // Função do console
 

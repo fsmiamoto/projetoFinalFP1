@@ -1,7 +1,6 @@
 #include "source.h"
-#include <locale.h>
 
-int main(int argc, char **argv)
+int main(void)
 {
     bool sair = false;
     setlocale(LC_ALL, "Portuguese");
