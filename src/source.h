@@ -11,7 +11,7 @@
 
 // Flags do programa
 
-static const int ORIGEM_CHAMADAS = 1; // 1: Aleatório 2: Arquivo 3: Teclado
+static const int ORIGEM_CHAMADAS = 2; // 1: Aleatório 2: Arquivo 3: Teclado
 
 // Constantes utilizadas no simulador
 
@@ -20,14 +20,14 @@ static const bool SUBINDO = true;
 static const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
 static const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
 static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
-static const int TEMPO_MAX = 500;   // Tempo máximo de simulação
+static const int TEMPO_MAX = 20000;   // Tempo máximo de simulação
 static const int ANDARES_MAX = 200; // Número máximo de andares
 static const int CAP_MAX = 20;      // Maior capacidade possível
-static const int ELEVADORES_MAX = 5; // Número máximo de elevadores
-static const int NUM_ANDARES_STD = 12; // Número padrão de andares
-static const int NUM_ELEVADORES_STD = 2; // Número padrão de elevadores
+static const int ELEVADORES_MAX = 73; // Número máximo de elevadores
+static const int NUM_ANDARES_STD = 100; // Número padrão de andares
+static const int NUM_ELEVADORES_STD = 4; // Número padrão de elevadores
 static const int CAP_ELEVADOR_STD = 8; // Capacidade máxima padrão dos elevadores
-static const char * nomeArqChamadas = ".\\arquivos\\chamadas.txt";
+static const char * nomeArqChamadas = ".\\arquivos\\calls.txt";
 static const char * nomeArqLog = ".\\arquivos\\log.txt";
 static const char * nomeArqStat = ".\\arquivos\\estatisticas.txt";
 
@@ -41,6 +41,7 @@ typedef struct
     int tempoSaida; // Instante em que o passageiro saiu do elevador
     int andarOrigem;
     int andarDestino;
+    int elevadorDesignado;
     bool sentido;
 } Chamada;
 
@@ -84,7 +85,7 @@ void defineParametros(int * elevadores, int * andares, int * cap);
 
 void defineSentido();
 
-void defineElevador();
+void defineElevador(Chamada c, bool realoc);
 
 void geraEstatisticas();
 
@@ -121,8 +122,6 @@ void limpaVetor(Vetor_Chamada * c);
 // Funções auxiliares
 
 void ordena(int * vec, int * index, int tam);
-
-int inteiroRandom(int baixo, int alto);
 
 void printaEspacos(int qntd);
 
