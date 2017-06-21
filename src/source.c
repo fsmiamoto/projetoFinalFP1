@@ -10,6 +10,8 @@ FILE * arqChamadas;
 FILE * arqLog;
 FILE * arqStat;
 
+
+
 /* Funções do Menu */
 
 // Printa o menu no console e retorna a opção selecionada
@@ -186,7 +188,7 @@ void simula(int numE, int numA,int cap)
             {
                 moveElevadores();
             }
-            defineElevador(call,false);
+            defineElevador(call);
             posicionaChamada();
         }
         else
@@ -293,6 +295,8 @@ bool pegaChamadas(int origem)
                 status = false;
             if(andarDestino < 0 || andarDestino > numAndares)
                 status = false;
+            if(andarDestino == andarOrigem)
+                status = false;
         }
         else
             status = false;
@@ -360,7 +364,28 @@ int moveElevadores()
     for(i = 0; i < numElevadores; i++)
     {
         flag = false;
-        //printf("T: %d | Elevador #%d  - Andar Atual: %d\n",tempo,i,elevadores[i].andarAtual);
+        // Se acabou de chegar no andar...
+        if(elevadores[i].entreAndares == 0)
+        {
+            // Se o andar atual é um andar selecionados internamente:
+            if(elevadores[i].andar_sel_int[elevadores[i].andarAtual])
+            {
+                elevadores[i].andar_sel_int[elevadores[i].andarAtual] = false;
+                flag = true;
+            }
+            // Se o andar atual é um andar selecionados internamente:
+            if(elevadores[i].andar_sel_ext[elevadores[i].andarAtual])
+            {
+                elevadores[i].andar_sel_ext[elevadores[i].andarAtual] = false;
+                if(andares[elevadores[i].andarAtual].temChamada)
+                    flag = true;
+                else if(elevadores[i].numP == 0)
+                    elevadores[i].estaAtendendo = false;
+            }
+            // Flag indica que elevador deve abrir a porta para entrada ou saída de passageiros
+            if(flag)
+                entraSai(i);
+        }
         // Se o elevador estiver atendendo alguma chamada:
         if(elevadores[i].estaAtendendo == true)
         {
@@ -369,28 +394,10 @@ int moveElevadores()
             {
                 if(elevadores[i].sentido == SUBINDO && elevadores[i].andarAtual < numAndares)
                     elevadores[i].andarAtual++;
-                else if(elevadores[i].andarAtual > 0)
+                else if(elevadores[i].sentido == DESCENDO && elevadores[i].andarAtual > 0)
                     elevadores[i].andarAtual--;
                 elevadores[i].entreAndares = 0;
             }
-        }
-        // Se o andar atual é um andar selecionados internamente:
-        if(elevadores[i].andar_sel_int[elevadores[i].andarAtual])
-        {
-            elevadores[i].andar_sel_int[elevadores[i].andarAtual] = false;
-            flag = true;
-        }
-        // Se o andar atual é um andar selecionados internamente:
-        if(elevadores[i].andar_sel_ext[elevadores[i].andarAtual])
-        {
-            elevadores[i].andar_sel_ext[elevadores[i].andarAtual] = false;
-            flag = true;
-        }
-        // Flag indica que elevador deve abrir a porta para entrada ou saída de passageiros
-        if(flag)
-        {
-            entraSai(i);
-            defineSentido();
         }
     }
     // Incremente o tempo em um segundo
@@ -434,7 +441,7 @@ void defineSentido()
 }
 
 // Define o elevador que atenderá a chamada
-void defineElevador(Chamada c, bool realoc)
+void defineElevador(Chamada c)
 {
     int i;
     // Aloca vetores para uso no cálculo das distancias
@@ -458,14 +465,15 @@ void defineElevador(Chamada c, bool realoc)
         id[i] = i;
     }
     // Ordena vetor baseado no valor absoluto da distância
-    ordena(distancias,id,numElevadores);
+    ordenaDistancias(distancias,id,numElevadores);
     // Para chamada de subir
     if(c.sentido == SUBINDO)
     {
         bool setado = false;
         // Verifica por elevadores subindo que ainda não chegaram no andar de origem ou parados
         for(i = 0; i < numElevadores; i++)
-            if(distancias[i] < 0 && elevadores[id[i]].sentido == SUBINDO)
+        {
+            if((distancias[i] < 0 || (distancias[i] == 0 && elevadores[id[i]].entreAndares == 0)) && elevadores[id[i]].sentido == SUBINDO)
             {
                 elevadores[id[i]].andar_sel_ext[c.andarOrigem] = true;
                 c.elevadorDesignado = id[i];
@@ -479,25 +487,18 @@ void defineElevador(Chamada c, bool realoc)
                 setado = true;
                 break;
             }
+        }
         // Caso não haja elevadores "ideais", aloca para o mais próximo;
         if(!setado)
         {
-            if(realoc)
-            {
-                for(i = 0; i < numElevadores; i++)
-                    // Evita que elevador fique travado caso o mesmo esteja no andar
-                    if(distancias[i] != 0)
-                    {
-                        elevadores[id[i]].andar_sel_ext[c.andarOrigem] = true;
-                        c.elevadorDesignado = id[i];
-                        break;
-                    }
-            }
-            else
-            {
-                elevadores[id[0]].andar_sel_ext[c.andarOrigem] = true;
-                c.elevadorDesignado = id[0];
-            }
+            for(i = 0; i < numElevadores; i++)
+                // Evita que elevador fique travado caso o mesmo esteja no andar
+                if(distancias[i] != 0)
+                {
+                    elevadores[id[i]].andar_sel_ext[c.andarOrigem] = true;
+                    c.elevadorDesignado = id[i];
+                    break;
+                }
         }
 
     }
@@ -506,7 +507,8 @@ void defineElevador(Chamada c, bool realoc)
     {
         bool setado = false;
         for(i = 0; i < numElevadores; i++)
-            if(distancias[i] > 0 && elevadores[id[i]].sentido == DESCENDO)
+        {
+            if((distancias[i] > 0 || (distancias[i] == 0 && elevadores[id[i]].entreAndares == 0)) && elevadores[id[i]].sentido == DESCENDO)
             {
                 elevadores[id[i]].andar_sel_ext[c.andarOrigem] = true;
                 c.elevadorDesignado = id[i];
@@ -520,31 +522,24 @@ void defineElevador(Chamada c, bool realoc)
                 setado = true;
                 break;
             }
+        }
         if(!setado)
         {
-            int j;
-            if(realoc)
+            for(i = 0; i < numElevadores; i++)
             {
-                for(j = 0; j < numElevadores; j++)
+                // Evita que elevador fique travado caso o mesmo esteja no andar
+                if(distancias[i] != 0)
                 {
-                    // Evita que elevador fique travado caso o mesmo esteja no andar
-                    if(distancias[j] != 0)
-                    {
-                        elevadores[id[j]].andar_sel_ext[c.andarOrigem] = true;
-                        c.elevadorDesignado = id[j];
-                        break;
-                    }
+                    elevadores[id[i]].andar_sel_ext[c.andarOrigem] = true;
+                    c.elevadorDesignado = id[i];
+                    break;
                 }
             }
-            else
-            {
-                elevadores[id[0]].andar_sel_ext[c.andarOrigem] = true;
-                c.elevadorDesignado = id[0];
-            }
+
         }
     }
-    fprintf(arqLog,"T: %d | Chamada no andar %d, designada ao elevador #%d\n",tempo,c.andarOrigem,c.elevadorDesignado);
-    printf("T: %d | Chamada no andar %d, designada ao elevador #%d\n",tempo,c.andarOrigem,c.elevadorDesignado);
+    fprintf(arqLog,"T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempo,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
+    printf("T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempo,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
     free(distancias);
     free(id);
     distancias = NULL;
@@ -555,22 +550,23 @@ void defineElevador(Chamada c, bool realoc)
 void entraSai(int ID)
 {
     int i;
-    fprintf(arqLog,"T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempo,ID,elevadores[ID].andarAtual);
-    printf("T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempo,ID,elevadores[ID].andarAtual);
+    fprintf(arqLog,"T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
+    printf("T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
     tempo += TEMPO_ABERTURA;
     //Passsageiros descem primeiro:
     for(i = 0; i < elevadores[ID].vCall.qntd; i++)
         //Checa se o andar atual é o andar de destino do passageiro no interior do elevador
         if(elevadores[ID].vCall.chamadas[i].andarDestino == elevadores[ID].andarAtual)
         {
-            fprintf(arqLog,"T: %d | Elevador #%d - Passageiro %d desceu no andar %d\n",tempo, ID, elevadores[ID].vCall.chamadas[i].ID, elevadores[ID].andarAtual);
-            printf("T: %d | Elevador #%d - Passageiro %d desceu no andar %d\n",tempo, ID, elevadores[ID].vCall.chamadas[i].ID, elevadores[ID].andarAtual);
+            fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempo, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
+            printf("T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempo, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
             // Insere o tempo de saída do elevador
             elevadores[ID].vCall.chamadas[i].tempoSaida = tempo;
             // Remove chamada do elevador e coloca no vetor de chamadas concluídas
             insereChamada(&chamadasConcluidas,elevadores[ID].vCall.chamadas[i]);
             removeChamada(&elevadores[ID].vCall,i);
-            i--;
+            if(elevadores[ID].vCall.qntd > 0)
+                i--;
             //Atualiza o número atual de passageiros
             elevadores[ID].numP--;
         }
@@ -582,8 +578,8 @@ void entraSai(int ID)
             // Se o número de passageiros atual for zero então o primeiro passageiro que entrar terá controle sobre o elevador
             if(elevadores[ID].numP == 0)
             {
-                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro %d entrou com destino ao andar %d\n", tempo, ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
-                printf("T: %d | Elevador #%d - Passageiro %d entrou com destino ao andar %d\n", tempo, ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 // Insere o tempo de entrada no elevador
                 andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempo;
                 // Incrementa o total de passageiros transportados e o número atual de passageiros.
@@ -591,20 +587,20 @@ void entraSai(int ID)
                 elevadores[ID].totalP++;
                 // Seta o sentido do elevador como o sentido da chamada
                 elevadores[ID].sentido = andares[elevadores[ID].andarAtual].vCall.chamadas[i].sentido;
-                // Se o elevador for diferente do inicialmente designado
-                if(ID != andares[elevadores[ID].andarAtual].vCall.chamadas[i].elevadorDesignado)
-                    elevadores[andares[elevadores[ID].andarAtual].vCall.chamadas[i].elevadorDesignado].andar_sel_ext[elevadores[ID].andarAtual] = false;
                 // Adiciona andar de destino do passageiro que entrou
                 elevadores[ID].andar_sel_int[andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino] = true;
                 // Insere chamada no elevador e a remove do andar.
                 insereChamada(&elevadores[ID].vCall,andares[elevadores[ID].andarAtual].vCall.chamadas[i]);
                 removeChamada(&andares[elevadores[ID].andarAtual].vCall,i);
+                // Ajusta o indice
+                if(andares[elevadores[ID].andarAtual].vCall.qntd > 0)
+                    i--;
             }
             // Checa se o sentido da chamada é o mesmo do elevador e se a capacidade do elevador não será excedida.
             else if((andares[elevadores[ID].andarAtual].vCall.chamadas[i].sentido == elevadores[ID].sentido) &&  (elevadores[ID].numP+1) <= capElevador)
             {
-                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro %d entrou com destino ao andar %d\n", tempo, ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
-                printf("T: %d | Elevador #%d - Passageiro %d entrou com destino ao andar %d\n", tempo, ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 // Insere o tempo de entrada no elevador
                 andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempo;
                 // Incrementa o total de passageiros transportados e o número atual de passageiros.
@@ -612,65 +608,81 @@ void entraSai(int ID)
                 elevadores[ID].totalP++;
                 // Adiciona andar de destino do passageiro que entrou
                 elevadores[ID].andar_sel_int[andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino] = true;
-                if(ID != andares[elevadores[ID].andarAtual].vCall.chamadas[i].elevadorDesignado)
-                    elevadores[andares[elevadores[ID].andarAtual].vCall.chamadas[i].elevadorDesignado ].andar_sel_ext[elevadores[ID].andarAtual] = false;
                 // Insere chamada no elevador e a remove do andar.
                 insereChamada(&elevadores[ID].vCall,andares[elevadores[ID].andarAtual].vCall.chamadas[i]);
                 removeChamada(&andares[elevadores[ID].andarAtual].vCall,i);
-                // Se o número de chamadas no elevador for zero então seta temChamada como falso
-                if(andares[elevadores[ID].andarAtual].vCall.qntd == 0)
-                    andares[elevadores[ID].andarAtual].temChamada = false;
+                if(andares[elevadores[ID].andarAtual].vCall.qntd > 0)
+                    i--;
             }
             else
             {
                 // Se por algum motivo, o passageiro não entrou no elevador, então designa outro elevador para atender a chamada.
-                defineElevador(andares[elevadores[ID].andarAtual].vCall.chamadas[i],true);
+                defineElevador(andares[elevadores[ID].andarAtual].vCall.chamadas[i]);
             }
 
         }
     }
+    // Se o número de chamadas no andar for zero então seta temChamada como falso
+    if(andares[elevadores[ID].andarAtual].vCall.qntd == 0)
+        andares[elevadores[ID].andarAtual].temChamada = false;
     // Se o número de passageiros apos a entrada e saída for igual a zero então o elevador está apto a receber uma chamada externa
     if(elevadores[ID].numP == 0)
         elevadores[ID].estaAtendendo = false;
-    fprintf(arqLog,"T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempo,ID,elevadores[ID].andarAtual);
-    printf("T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempo,ID,elevadores[ID].andarAtual);
+    fprintf(arqLog,"T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
+    printf("T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
     tempo += TEMPO_FECHAMENTO;
 }
 
 // Calcula as estatísticas baseado no vetor de chamadas concluídas
 void geraEstatisticas()
 {
-    int i,esperaMax;
-    float tEsperaMed = 0, tEsperaMax = 0, tViagemMed = 0, tViagemMax = 0, numPassageirosMed = 0;
-    for(i = 0; i < chamadasConcluidas.qntd; i++)
+    if(chamadasConcluidas.qntd > 0)
     {
-        // Cálculos do tempo de espera
-        float tEspera = chamadasConcluidas.chamadas[i].tempoEntrada - chamadasConcluidas.chamadas[i].tempoInicial;
-        tEsperaMed += tEspera;
-        if(tEspera > tEsperaMax)
+        int i,esperaMax;
+        float tEsperaMed = 0, tEsperaMax = 0, tViagemMed = 0, tViagemMax = 0, numPassageirosMed = 0;
+        for(i = 0; i < chamadasConcluidas.qntd; i++)
         {
-            tEsperaMax = tEspera;
-            esperaMax = i;
-        }
-        // Cálculos do tempo de viagem
-        float tViagem = chamadasConcluidas.chamadas[i].tempoSaida - chamadasConcluidas.chamadas[i].tempoEntrada;
-        tViagemMed += tViagem;
-        if(tViagem > tViagemMax)
-        {
-            tViagemMax = tViagem;
-        }
+            // Cálculos do tempo de espera
+            float tEspera = chamadasConcluidas.chamadas[i].tempoEntrada - chamadasConcluidas.chamadas[i].tempoInicial;
+            tEsperaMed += tEspera;
+            if(tEspera > tEsperaMax)
+            {
+                tEsperaMax = tEspera;
+                esperaMax = i;
+            }
+            // Cálculos do tempo de viagem
+            float tViagem = chamadasConcluidas.chamadas[i].tempoSaida - chamadasConcluidas.chamadas[i].tempoEntrada;
+            tViagemMed += tViagem;
+            if(tViagem > tViagemMax)
+            {
+                tViagemMax = tViagem;
+            }
 
+        }
+        tEsperaMed /= chamadasConcluidas.qntd;
+        tViagemMed /= chamadasConcluidas.qntd;
+        for(i = 0; i < numElevadores; i++)
+            numPassageirosMed += (float) elevadores[i].totalP/(tempo/60);
+        numPassageirosMed /= numElevadores;
+        int * ids = (int *) calloc(chamadasConcluidas.qntd,sizeof(int));
+        for(i = 0; i < chamadasConcluidas.qntd; i++)
+            ids[i] = chamadasConcluidas.chamadas[i].ID;
+        ordenaVetor(ids,chamadasConcluidas.qntd);
+        for(i = 0; i < chamadasConcluidas.qntd; i++)
+            if(ids[i] != i)
+            {
+                printf("Faltou o %d",ids[i]-1);
+                break;
+            }
+        printf("\nEstatísticas da simulação: \n\nChamadas atendidas: %d\nTempo médio de espera: %.1f s\nTempo máximo de espera: %.1f s",chamadasConcluidas.qntd,tEsperaMed,tEsperaMax);
+        printf("\nTempo médio de viagem: %.1f s\nTempo máximo de viagem: %.1f s",tViagemMed,tViagemMax);
+        printf("\nNúmero médio de passageiros por minuto: %.2f\n\n",numPassageirosMed);
+        printf("\nEspera Max: T: %d AO: %d AD %d TE: %d\n",chamadasConcluidas.chamadas[esperaMax].tempoInicial,chamadasConcluidas.chamadas[esperaMax].andarOrigem,chamadasConcluidas.chamadas[esperaMax].andarDestino,chamadasConcluidas.chamadas[esperaMax].tempoEntrada);
+        fprintf(arqStat,"%.1f|%.1f|%.1f|%.1f|%.5f",tEsperaMed,tEsperaMax,tViagemMed,tViagemMax,numPassageirosMed);
+        free(ids);
     }
-    tEsperaMed /= chamadasConcluidas.qntd;
-    tViagemMed /= chamadasConcluidas.qntd;
-    for(i = 0; i < numElevadores; i++)
-        numPassageirosMed += (float) elevadores[i].totalP/(tempo/60);
-    numPassageirosMed /= numElevadores;
-    printf("\nEstatísticas da simulação: \n\nChamadas atendidas: %d\nTempo médio de espera: %.1f s\nTempo máximo de espera: %.1f s",chamadasConcluidas.qntd,tEsperaMed,tEsperaMax);
-    printf("\nTempo médio de viagem: %.1f s\nTempo máximo de viagem: %.1f s",tViagemMed,tViagemMax);
-    printf("\nNúmero médio de passageiros por minuto: %.2f\n\n",numPassageirosMed);
-    printf("\nEspera Max: T: %d AO: %d AD %d TE: %d\n",chamadasConcluidas.chamadas[esperaMax].tempoInicial,chamadasConcluidas.chamadas[esperaMax].andarOrigem,chamadasConcluidas.chamadas[esperaMax].andarDestino,chamadasConcluidas.chamadas[esperaMax].tempoEntrada);
-    fprintf(arqStat,"%.1f|%.1f|%.1f|%.1f|%.5f",tEsperaMed,tEsperaMax,tViagemMed,tViagemMax,numPassageirosMed);
+    else
+        printf("\nNenhuma chamada foi concluída!\n");
 }
 
 // Função para abertura dos arquivos necessários que checa por erros
@@ -817,7 +829,7 @@ void pausa()
     getch();
 }
 
-void ordena(int * vec, int * index, int tam)
+void ordenaDistancias(int * vec, int * index, int tam)
 {
     int mem1 = 0, mem2 = 0,j, i;
     for (i = 1; i < tam; i++)
@@ -832,6 +844,23 @@ void ordena(int * vec, int * index, int tam)
                 vec[j + 1] = mem1;
                 index[j] = index[j + 1];
                 index[j + 1] = mem2;
+            }
+        }
+    }
+}
+
+void ordenaVetor(int * vec,int tam)
+{
+    int mem = 0, i, j;
+    for (i = 1; i < tam; i++)
+    {
+        for (j = 0; j < tam - i; j++)
+        {
+            if (vec[j] > vec[j + 1])
+            {
+                mem = vec[j];
+                vec[j] = vec[j + 1];
+                vec[j + 1] = mem;
             }
         }
     }

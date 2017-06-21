@@ -23,9 +23,9 @@ static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um a
 static const int TEMPO_MAX = 20000;   // Tempo máximo de simulação
 static const int ANDARES_MAX = 200; // Número máximo de andares
 static const int CAP_MAX = 20;      // Maior capacidade possível
-static const int ELEVADORES_MAX = 73; // Número máximo de elevadores
+static const int ELEVADORES_MAX = 50; // Número máximo de elevadores
 static const int NUM_ANDARES_STD = 100; // Número padrão de andares
-static const int NUM_ELEVADORES_STD = 4; // Número padrão de elevadores
+static const int NUM_ELEVADORES_STD = 10; // Número padrão de elevadores
 static const int CAP_ELEVADOR_STD = 8; // Capacidade máxima padrão dos elevadores
 static const char * nomeArqChamadas = ".\\arquivos\\calls.txt";
 static const char * nomeArqLog = ".\\arquivos\\log.txt";
@@ -85,7 +85,7 @@ void defineParametros(int * elevadores, int * andares, int * cap);
 
 void defineSentido();
 
-void defineElevador(Chamada c, bool realoc);
+void defineElevador(Chamada c);
 
 void geraEstatisticas();
 
@@ -121,7 +121,9 @@ void limpaVetor(Vetor_Chamada * c);
 
 // Funções auxiliares
 
-void ordena(int * vec, int * index, int tam);
+void ordenaDistancias(int * vec, int * index, int tam);
+
+void ordenaVetor(int * vec, int tam);
 
 void printaEspacos(int qntd);
 
