@@ -1,10 +1,24 @@
 #include "source.h"
 
+// Constantes utilizadas no simulador
+
 //1: Aleatório 2: Arquivo 3: Teclado
 const int ORIGEM_CHAMADAS = 2;
 const char * nomeArqChamadas = ".\\arquivos\\calls.txt";
 const char * nomeArqLog = ".\\arquivos\\log.txt";
 const char * nomeArqStat = ".\\arquivos\\estatisticas.txt";
+const bool DESCENDO = false;   // Constantes booleanas arbitrárias
+const bool SUBINDO = true;
+const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
+const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
+const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
+const int TEMPO_MAX = 20000;   // Tempo máximo de simulação
+const int ANDARES_MAX = 200; // Número máximo de andares
+const int CAP_MAX = 20;      // Maior capacidade possível
+const int ELEVADORES_MAX = 50; // Número máximo de elevadores
+const int NUM_ANDARES_STD = 100; // Número padrão de andares
+const int NUM_ELEVADORES_STD = 2; // Número padrão de elevadores
+const int CAP_ELEVADOR_STD = 8; // Capacidade máxima padrão dos elevadores
 
 // Variáveis do simulador
 int tempo, idChamada, numAndares, numElevadores, capElevador;
@@ -59,22 +73,27 @@ int mostraMenu(void)
     return escolha;
 }
 // Função de apresentação das instruções
-void instrucoes()
+void instrucoes(void)
 {
     system("cls");
     printf("Bem-vindo ao Simulador para Controle de Elevadores!\n");
     pausa();
 }
 // Função de definição dos parâmetros de simulação
-void defineParametros(int * elevadores, int * andares, int * cap)
+void defineParametros(void)
 {
     char c = 0;
     bool flag = false;
+    bool refresh = true;
     while(c != 'v')
     {
-        system("cls");
-        printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",*andares,*elevadores,*cap);
-        printf("\nEscolha a opção para editar ou pressione v para voltar");
+        if(refresh)
+        {
+            system("cls");
+            printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",numAndares,numElevadores,capElevador);
+            printf("\nEscolha a opção para editar ou pressione v para voltar");
+            refresh = false;
+        }
         fflush(stdin);
         c = getch();
         switch(c)
@@ -94,7 +113,8 @@ void defineParametros(int * elevadores, int * andares, int * cap)
                     printf("Entrada inválida!\n");
             }
             while(!flag);
-            * andares = buf;
+            numAndares = buf;
+            refresh = true;
             mostraCursor(false);
             break;
         case '2':
@@ -111,7 +131,8 @@ void defineParametros(int * elevadores, int * andares, int * cap)
                     printf("Entrada inválida!\n");
             }
             while(!flag);
-            * elevadores = buf;
+            numElevadores = buf;
+            refresh = true;
             mostraCursor(false);
             break;
         case '3':
@@ -128,7 +149,8 @@ void defineParametros(int * elevadores, int * andares, int * cap)
                     printf("Entrada inválida!\n");
             }
             while(!flag);
-            * cap = buf;
+            capElevador = buf;
+            refresh = true;
             mostraCursor(false);
             break;
         default:
@@ -137,7 +159,7 @@ void defineParametros(int * elevadores, int * andares, int * cap)
     }
 }
 // Função de apresentação das estatísticas geradas pelo simulador
-void mostraEstatisticas()
+void mostraEstatisticas(void)
 {
     FILE * arq = fopen(nomeArqStat,"r");
     int qntd;
@@ -165,14 +187,10 @@ void mostraEstatisticas()
     fclose(arq);
 }
 // Função que inicia a simulação
-void simula(int numE, int numA,int cap)
+void simula(void)
 {
     // Flag de saída da simulação
     bool sair = false;
-    // Globaliza os parâmetros
-    numAndares = numA;
-    numElevadores = numE;
-    capElevador = cap;
     // Seta tempo e contador de identificação de chamadas para zero
     tempo = 0;
     idChamada = 0;
@@ -209,12 +227,20 @@ void simula(int numE, int numA,int cap)
     fechaSimulacao();
 }
 
+// Inicializa as variáveis de simulação
+void iniciaVariaveis(void)
+{
+    capElevador = CAP_ELEVADOR_STD;
+    numAndares= NUM_ANDARES_STD;
+    numElevadores = NUM_ELEVADORES_STD;
+}
+
 /*------------------------------------------------------------------------------------------------*/
 
 /* Funções do Simulador */
 
 // Inicialização do vetor de elevadores
-void setupElevadores()
+void setupElevadores(void)
 {
     int i;
     for(i = 0; i < numElevadores; i++)
@@ -232,7 +258,7 @@ void setupElevadores()
 }
 
 // Inicialização do vetor de andares
-void setupAndares()
+void setupAndares(void)
 {
     int i;
     for(i = 0; i < (numAndares+1); i++)
@@ -243,7 +269,7 @@ void setupAndares()
 }
 
 // Desaloca vetores e fecha arquivos
-void fechaSimulacao()
+void fechaSimulacao(void)
 {
     int i;
     for(i = 0; i < numElevadores; i++)
@@ -367,7 +393,7 @@ bool pegaChamadas(int origem)
 }
 
 // Locomove os elevadores
-int moveElevadores()
+int moveElevadores(void)
 {
     int i;
     bool flag;
@@ -418,14 +444,14 @@ int moveElevadores()
 }
 
 // Insere a chamada no andar de origem correspondente
-void posicionaChamada()
+void posicionaChamada(void)
 {
     insereChamada(&andares[call.andarOrigem].vCall, call);
     andares[call.andarOrigem].temChamada = true;
 }
 
 // Define o sentido de deslocamento de elevadores ociosos
-void defineSentido()
+void defineSentido(void)
 {
     int i;
     for(i = 0; i < numElevadores; i++)
@@ -647,7 +673,7 @@ void entraSai(int ID)
 }
 
 // Calcula as estatísticas baseado no vetor de chamadas concluídas
-void geraEstatisticas()
+void geraEstatisticas(void)
 {
     if(chamadasConcluidas.qntd > 0)
     {
@@ -688,7 +714,7 @@ void geraEstatisticas()
 }
 
 // Função para abertura dos arquivos necessários que checa por erros
-void abreArquivos()
+void abreArquivos(void)
 {
     arqChamadas = fopen(nomeArqChamadas,"r"); // Arquivo de leitura de chamadas
     if(arqChamadas == NULL)
@@ -713,7 +739,7 @@ void abreArquivos()
 }
 
 // Função de alocação dos vetores de andares e elevadores
-void alocaEA()
+void alocaEA(void)
 {
     elevadores = (Elevador *) calloc(numElevadores,sizeof(Elevador)); // Aloca vetor de struct Elevador
     if(elevadores == NULL)
@@ -729,7 +755,7 @@ void alocaEA()
     }
 }
 
-void animacao()
+void animacao(void)
 {
     int i;
     system("cls");
@@ -818,7 +844,7 @@ void mostraCursor(bool flag)
 }
 
 // Função substituta para o system("pause");
-void pausa()
+void pausa(void)
 {
     fflush(stdin);
     printf("\nPressione qualquer tecla para voltar ao menu....\n");

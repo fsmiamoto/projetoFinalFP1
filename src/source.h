@@ -49,23 +49,6 @@ typedef struct
     bool temChamada;
 } Andar;
 
-// Constantes utilizadas no simulador
-
-static const bool DESCENDO = false;   // Constantes booleanas arbitrárias
-static const bool SUBINDO = true;
-static const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
-static const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
-static const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
-static const int TEMPO_MAX = 20000;   // Tempo máximo de simulação
-static const int ANDARES_MAX = 200; // Número máximo de andares
-static const int CAP_MAX = 20;      // Maior capacidade possível
-static const int ELEVADORES_MAX = 50; // Número máximo de elevadores
-static const int NUM_ANDARES_STD = 100; // Número padrão de andares
-static const int NUM_ELEVADORES_STD = 2; // Número padrão de elevadores
-static const int CAP_ELEVADOR_STD = 8; // Capacidade máxima padrão dos elevadores
-
-
-
 // Funções de implementação do simulador
 
 int mostraMenu();
@@ -77,6 +60,8 @@ void simula();
 void mostraEstatisticas();
 
 void defineParametros();
+
+void iniciaVariaveis();
 
 // Funções relacionadas ao funcionamento da simulação
 
@@ -90,7 +75,7 @@ void entraSai(int ID);
 
 int moveElevadores();
 
-bool pegaChamadas();
+bool pegaChamadas(int origem);
 
 void posicionaChamada();
 

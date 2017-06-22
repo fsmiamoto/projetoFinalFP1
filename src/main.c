@@ -5,9 +5,7 @@ int main(void)
     bool sair = false;
     setlocale(LC_ALL, "Portuguese");
     mostraCursor(false);
-    int numElevadores = NUM_ELEVADORES_STD;
-    int numAndares = NUM_ANDARES_STD;
-    int capElevador = CAP_ELEVADOR_STD;
+    iniciaVariaveis();
     while(!sair)
     {
         switch(mostraMenu())
@@ -16,10 +14,10 @@ int main(void)
             instrucoes();
             break;
         case 2:
-            defineParametros(&numElevadores,&numAndares,&capElevador);
+            defineParametros();
             break;
         case 3:
-            simula(numElevadores,numAndares,capElevador);
+            simula();
             break;
         case 4:
             mostraEstatisticas();
