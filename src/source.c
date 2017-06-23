@@ -7,8 +7,8 @@ const char * NOME_ARQ_STAT = ".\\arquivos\\estatisticas.txt";
 const int TEMPO_ABERTURA = 1;       // Tempo de abertura da porta
 const int TEMPO_FECHAMENTO = 1;     // Tempo de fechamento da porta
 const int TEMPO_POR_ANDAR = 5;      // Tempo necessário para subir/descer um andar
-const int TEMPO_MAX = 100000;        // Tempo máximo de simulação
-const int ANDARES_MAX = 200;       // Número máximo de andares
+const int TEMPO_MAX = 100000;       // Tempo máximo de simulação
+const int ANDARES_MAX = 200;        // Número máximo de andares
 const int CAP_MAX = 20;             // Maior capacidade possível
 const int ELEVADORES_MAX = 8000;    // Número máximo de elevadores
 const int NUM_ANDARES_STD = 12;     // Número padrão de andares
@@ -22,11 +22,7 @@ const int DELTA_T_MAX = 100;
 int tempoAtual, idChamada, numAndares, numElevadores, capElevador, origemChamadas, tempoSimulacao, cargaMax;
 Elevador * elevadores;
 Andar * andares;
-Chamada call;
 Vetor_Chamada chamadasConcluidas;
-FILE * arqChamadas;
-FILE * arqLog;
-FILE * arqStat;
 
 /* Funções do Menu */
 
@@ -260,14 +256,18 @@ void simula(void)
 {
     // Flag de saída da simulação
     bool sair = false;
+    // Chamada que conterá a chamada atual
+    Chamada call;
+    FILE * arqChamadas;
+    FILE * arqLog;
+    // Abre os arquivos necessários
+    abreArquivos(&arqChamadas, &arqLog);
     // Seta tempo e contador de identificação de chamadas para zero
     tempoAtual = 0;
     idChamada = 0;
     cargaMax = 0;
     // Aloca um vetor com o número de elevadores da struct Elevadorgene
     alocaEA();
-    // Abre os arquivos necessários
-    abreArquivos();
     // Limpa a tela
     system("cls");
     // Setup inicial dos elevadores e andares
@@ -276,30 +276,29 @@ void simula(void)
     iniciaVetor(&chamadasConcluidas,5);
     while(tempoAtual <= tempoSimulacao && !sair)
     {
-        if(pegaChamadas())
+        if(pegaChamadas(&call, &arqChamadas))
         {
             while(tempoAtual < call.tempoInicial)
             {
-                moveElevadores();
+                moveElevadores(&arqLog);
             }
-            defineElevador(call);
-            posicionaChamada();
+            defineElevador(call, &arqLog);
+            posicionaChamada(call);
             // Diferença entre chamadas recebidas e chamadas terminadas indica as chamadas pendentes
             if((idChamada - chamadasConcluidas.qntd) > cargaMax)
                 cargaMax = idChamada - chamadasConcluidas.qntd;
         }
         else
         {
-            moveElevadores();
+            moveElevadores(&arqLog);
             if((idChamada - chamadasConcluidas.qntd) > cargaMax)
                 cargaMax = idChamada - chamadasConcluidas.qntd;
         }
     }
     geraEstatisticas();
     pausa();
-    //animacao();
     // Libera memória utilizada e fechar arquivos utilizados
-    fechaSimulacao();
+    fechaSimulacao(&arqChamadas,&arqLog);
 }
 
 // Inicializa as variáveis de simulação
@@ -347,7 +346,7 @@ void setupAndares(void)
 }
 
 // Desaloca vetores e fecha arquivos
-void fechaSimulacao(void)
+void fechaSimulacao(FILE ** arqChamadas, FILE ** arqLog)
 {
     int i;
     for(i = 0; i < numElevadores; i++)
@@ -359,13 +358,12 @@ void fechaSimulacao(void)
     andares = NULL;
     elevadores = NULL;
     limpaVetor(&chamadasConcluidas);
-    fclose(arqChamadas);
-    fclose(arqLog);
-    fclose(arqStat);
+    fclose(*arqChamadas);
+    fclose(*arqLog);
 }
 
 // Obtem chamadas da origem desejada -- Revisar
-bool pegaChamadas(void)
+bool pegaChamadas(Chamada * call, FILE ** arqChamadas)
 {
     bool status = true;
     bool flag = false;
@@ -393,7 +391,7 @@ bool pegaChamadas(void)
     //Arquivo
     case ARQUIVO:
         // Verifica por fim de arquivo
-        if(fscanf(arqChamadas,"%d,%d,%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
+        if(fscanf(* arqChamadas,"%d,%d,%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
         {
             status = true;
             if(tempoCall < 0 || tempoCall > tempoSimulacao || tempoCall < tempoAtual)
@@ -461,17 +459,17 @@ bool pegaChamadas(void)
     if(status)
     {
         // Atributos da chamada são setados
-        call.andarOrigem = andarOrigem;
-        call.andarDestino = andarDestino;
-        call.sentido = andarOrigem > andarDestino? DESCENDO : SUBINDO; // Seta o sentido da chamada.
-        call.tempoInicial = tempoCall;
-        call.ID = idChamada++;
+        call->andarOrigem = andarOrigem;
+        call->andarDestino = andarDestino;
+        call->sentido = andarOrigem > andarDestino? DESCENDO : SUBINDO; // Seta o sentido da chamada.
+        call->tempoInicial = tempoCall;
+        call->ID = idChamada++;
     }
     return status;
 }
 
 // Locomove os elevadores
-int moveElevadores(void)
+int moveElevadores(FILE ** arqLog)
 {
     int i;
     bool flag;
@@ -500,7 +498,7 @@ int moveElevadores(void)
             }
             // Flag indica que elevador deve abrir a porta para entrada ou saída de passageiros
             if(flag)
-                entraSai(i);
+                entraSai(i, arqLog);
         }
         // Se o elevador estiver atendendo alguma chamada:
         if(elevadores[i].estaAtendendo == true)
@@ -522,7 +520,7 @@ int moveElevadores(void)
 }
 
 // Insere a chamada no andar de origem correspondente
-void posicionaChamada(void)
+void posicionaChamada(Chamada  call)
 {
     insereChamada(&andares[call.andarOrigem].vCall, call);
     andares[call.andarOrigem].temChamada = true;
@@ -557,7 +555,7 @@ void defineSentido(void)
 }
 
 // Define o elevador que atenderá a chamada
-void defineElevador(Chamada c)
+void defineElevador(Chamada c, FILE ** arqLog)
 {
     int i;
     // Aloca vetores para uso no cálculo das distancias
@@ -654,7 +652,7 @@ void defineElevador(Chamada c)
 
         }
     }
-    fprintf(arqLog,"T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempoAtual,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
+    fprintf(* arqLog,"T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempoAtual,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
     printf("T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempoAtual,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
     free(distancias);
     free(id);
@@ -663,10 +661,10 @@ void defineElevador(Chamada c)
 }
 
 // Define entrada e saída de passageiros
-void entraSai(int ID)
+void entraSai(int ID, FILE ** arqLog)
 {
     int i;
-    fprintf(arqLog,"T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
+    fprintf(* arqLog,"T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
     printf("T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
     tempoAtual += TEMPO_ABERTURA;
     //Passsageiros descem primeiro:
@@ -674,7 +672,7 @@ void entraSai(int ID)
         //Checa se o andar atual é o andar de destino do passageiro no interior do elevador
         if(elevadores[ID].vCall.chamadas[i].andarDestino == elevadores[ID].andarAtual)
         {
-            fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempoAtual, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
+            fprintf(* arqLog,"T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempoAtual, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
             printf("T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempoAtual, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
             // Insere o tempo de saída do elevador
             elevadores[ID].vCall.chamadas[i].tempoSaida = tempoAtual;
@@ -695,7 +693,7 @@ void entraSai(int ID)
             // Se o número de passageiros atual for zero então o primeiro passageiro que entrar terá controle sobre o elevador
             if(elevadores[ID].numP == 0)
             {
-                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                fprintf(* arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 // Insere o tempo de entrada no elevador
                 andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempoAtual;
@@ -716,7 +714,7 @@ void entraSai(int ID)
             // Checa se o sentido da chamada é o mesmo do elevador e se a capacidade do elevador não será excedida.
             else if((andares[elevadores[ID].andarAtual].vCall.chamadas[i].sentido == elevadores[ID].sentido) &&  (elevadores[ID].numP+1) <= capElevador)
             {
-                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                fprintf(* arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 // Insere o tempo de entrada no elevador
                 andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempoAtual;
@@ -734,7 +732,7 @@ void entraSai(int ID)
             else
             {
                 // Se por algum motivo, o passageiro não entrou no elevador, então designa outro elevador para atender a chamada.
-                defineElevador(andares[elevadores[ID].andarAtual].vCall.chamadas[i]);
+                defineElevador(andares[elevadores[ID].andarAtual].vCall.chamadas[i], arqLog);
             }
 
         }
@@ -745,7 +743,7 @@ void entraSai(int ID)
     // Se o número de passageiros apos a entrada e saída for igual a zero então o elevador está apto a receber uma chamada externa
     if(elevadores[ID].numP == 0)
         elevadores[ID].estaAtendendo = false;
-    fprintf(arqLog,"T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
+    fprintf(* arqLog,"T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
     printf("T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
     tempoAtual += TEMPO_FECHAMENTO;
 }
@@ -753,6 +751,12 @@ void entraSai(int ID)
 // Calcula as estatísticas baseado no vetor de chamadas concluídas
 void geraEstatisticas(void)
 {
+    FILE * arqStat = fopen(NOME_ARQ_STAT,"w");
+    if(arqStat == NULL)
+    {
+        perror("\nArquivo de estatísticas - O seguinte erro ocorreu: ");
+        exit(1);
+    }
     if(chamadasConcluidas.qntd > 0)
     {
         int i;
@@ -812,29 +816,25 @@ void geraEstatisticas(void)
     }
     else
         printf("\nNenhuma chamada foi concluída!\n");
+    fclose(arqStat);
 }
 
 // Função para abertura dos arquivos necessários que checa por erros
-void abreArquivos(void)
+void abreArquivos(FILE ** arqChamadas, FILE ** arqLog)
 {
-    arqChamadas = fopen(NOME_ARQ_CHAMADAS,"r"); // Arquivo de leitura de chamadas
-    if(arqChamadas == NULL)
+    // Abre o arquivo de chamadas
+    * arqChamadas = fopen(NOME_ARQ_CHAMADAS,"r");
+    if(* arqChamadas == NULL)
     {
         perror("\nArquivo de chamadas - O seguinte erro ocorreu: ");
         exit(1);
     }
     //Ignora primeira linha do arquivo de chamadas
-    fscanf(arqChamadas, "%*[^\n]\n");
-    arqLog = fopen(NOME_ARQ_LOG,"w");
-    if(arqLog == NULL)
+    fscanf(* arqChamadas, "%*[^\n]\n");
+    * arqLog = fopen(NOME_ARQ_LOG,"w");
+    if(* arqLog == NULL)
     {
         perror("\nArquivo de logs - O seguinte erro ocorreu: ");
-        exit(1);
-    }
-    arqStat = fopen(NOME_ARQ_STAT,"w");
-    if(arqStat == NULL)
-    {
-        perror("\nArquivo de estatísticas - O seguinte erro ocorreu: ");
         exit(1);
     }
 }

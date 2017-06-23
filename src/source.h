@@ -72,23 +72,23 @@ void iniciaVariaveis();
 
 void defineSentido();
 
-void defineElevador(Chamada c);
+void defineElevador(Chamada c, FILE ** arqLog);
 
 void geraEstatisticas();
 
-void entraSai(int ID);
+void entraSai(int ID, FILE ** arqLog);
 
-int moveElevadores();
+int moveElevadores(FILE ** arqLog);
 
-bool pegaChamadas();
+bool pegaChamadas(Chamada * call, FILE ** arqChamadas);
 
-void posicionaChamada();
+void posicionaChamada(Chamada c);
 
 void setupAndares();
 
 void setupElevadores();
 
-void abreArquivos();
+void abreArquivos(FILE ** arqChamadas, FILE ** arqLog);
 
 void fechaSimulacao();
 
