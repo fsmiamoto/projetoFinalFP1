@@ -1070,7 +1070,7 @@
 1498097433 source:e:\dropbox\fp\projetofinalfp1\src\main.c
 	"source.h"
 
-1498097566 e:\dropbox\fp\projetofinalfp1\src\source.h
+1498153667 e:\dropbox\fp\projetofinalfp1\src\source.h
 	<stdbool.h>
 	<stdio.h>
 	<stdlib.h>
@@ -1078,7 +1078,24 @@
 	<windows.h>
 	<time.h>
 	<locale.h>
+	<math.h>
 
-1498097520 source:e:\dropbox\fp\projetofinalfp1\src\source.c
+1498189461 source:e:\dropbox\fp\projetofinalfp1\src\source.c
+	"source.h"
+
+1498097433 source:c:\users\smiam\dropbox\fp\projetofinalfp1\src\main.c
+	"source.h"
+
+1498162362 c:\users\smiam\dropbox\fp\projetofinalfp1\src\source.h
+	<stdbool.h>
+	<stdio.h>
+	<stdlib.h>
+	<conio.h>
+	<windows.h>
+	<time.h>
+	<locale.h>
+	<math.h>
+
+1498162841 source:c:\users\smiam\dropbox\fp\projetofinalfp1\src\source.c
 	"source.h"
 

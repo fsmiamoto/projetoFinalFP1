@@ -8,15 +8,16 @@
 #include <windows.h>
 #include <time.h>
 #include <locale.h>
+#include <math.h>
 
 // Structs
 
 typedef struct
 {
-    int ID;           // Identificação do passageiro
-    int tempoInicial; // Instante em que a chamada foi realizada
+    int ID;             // Identificação do passageiro
+    int tempoInicial;   // Instante em que a chamada foi realizada
     int tempoEntrada;   // Instante em que o passageiro entrou no elevador
-    int tempoSaida; // Instante em que o passageiro saiu do elevador
+    int tempoSaida;     // Instante em que o passageiro saiu do elevador
     int andarOrigem;
     int andarDestino;
     int elevadorDesignado;
@@ -26,8 +27,8 @@ typedef struct
 typedef struct
 {
     Chamada * chamadas; // Vetor de chamadas que é alocado dinamicamente pela função iniciaVetor()
-    size_t qntd; // Representa a quantidade de elementos atual do vetor;
-    size_t tam; // Representa o tamanho total do vetor, que pode ser modificado em tempo de execução
+    size_t qntd;        // Representa a quantidade de elementos atual do vetor;
+    size_t tam;         // Representa o tamanho total do vetor, que pode ser modificado em tempo de execução
 } Vetor_Chamada;
 
 typedef struct
@@ -48,6 +49,10 @@ typedef struct
     Vetor_Chamada vCall;
     bool temChamada;
 } Andar;
+
+// Enumerações para definir constantes
+enum sentido { DESCENDO, SUBINDO};
+enum origem { ALEATORIO, ARQUIVO, TECLADO};
 
 // Funções de implementação do simulador
 
@@ -75,7 +80,7 @@ void entraSai(int ID);
 
 int moveElevadores();
 
-bool pegaChamadas(int origem);
+bool pegaChamadas();
 
 void posicionaChamada();
 
@@ -108,6 +113,12 @@ void ordenaDistancias(int * vec, int * index, int tam);
 void ordenaVetor(int * vec, int tam);
 
 void printaEspacos(int qntd);
+
+double media(int * vec, int tam);
+
+double mediana(int * vec, int tam);
+
+double desvioPadrao(int * vec, int tam);
 
 // Função do console
 

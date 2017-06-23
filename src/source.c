@@ -1,27 +1,25 @@
 #include "source.h"
 
 // Constantes utilizadas no simulador
-
-//1: Aleatório 2: Arquivo 3: Teclado
-const int ORIGEM_CHAMADAS = 2;
-const char * nomeArqChamadas = ".\\arquivos\\calls.txt";
-const char * nomeArqLog = ".\\arquivos\\log.txt";
-const char * nomeArqStat = ".\\arquivos\\estatisticas.txt";
-const bool DESCENDO = false;   // Constantes booleanas arbitrárias
-const bool SUBINDO = true;
-const int TEMPO_ABERTURA = 1; // Tempo de abertura da porta
-const int TEMPO_FECHAMENTO = 1; // Tempo de fechamento da porta
-const int TEMPO_POR_ANDAR = 5; // Tempo necessário para subir/descer um andar
-const int TEMPO_MAX = 20000;   // Tempo máximo de simulação
-const int ANDARES_MAX = 200; // Número máximo de andares
-const int CAP_MAX = 20;      // Maior capacidade possível
-const int ELEVADORES_MAX = 50; // Número máximo de elevadores
-const int NUM_ANDARES_STD = 100; // Número padrão de andares
-const int NUM_ELEVADORES_STD = 2; // Número padrão de elevadores
-const int CAP_ELEVADOR_STD = 8; // Capacidade máxima padrão dos elevadores
+const char * NOME_ARQ_CHAMADAS = ".\\arquivos\\calls.txt";
+const char * NOME_ARQ_LOG = ".\\arquivos\\log.txt";
+const char * NOME_ARQ_STAT = ".\\arquivos\\estatisticas.txt";
+const int TEMPO_ABERTURA = 1;       // Tempo de abertura da porta
+const int TEMPO_FECHAMENTO = 1;     // Tempo de fechamento da porta
+const int TEMPO_POR_ANDAR = 5;      // Tempo necessário para subir/descer um andar
+const int TEMPO_MAX = 100000;        // Tempo máximo de simulação
+const int ANDARES_MAX = 200;       // Número máximo de andares
+const int CAP_MAX = 20;             // Maior capacidade possível
+const int ELEVADORES_MAX = 8000;    // Número máximo de elevadores
+const int NUM_ANDARES_STD = 12;     // Número padrão de andares
+const int NUM_ELEVADORES_STD = 2;   // Número padrão de elevadores
+const int CAP_ELEVADOR_STD = 8;     // Capacidade máxima padrão dos elevadores
+const int TEMPO_SIMULACAO_STD = 5000;
+const int ORIGEM_STD = ALEATORIO;
+const int DELTA_T_MAX = 100;
 
 // Variáveis do simulador
-int tempo, idChamada, numAndares, numElevadores, capElevador;
+int tempoAtual, idChamada, numAndares, numElevadores, capElevador, origemChamadas, tempoSimulacao, cargaMax;
 Elevador * elevadores;
 Andar * andares;
 Chamada call;
@@ -38,7 +36,6 @@ int mostraMenu(void)
     char escolha;
     bool valido = false;
     system("cls");
-    printf("Simulador para controle de elevadores\n\n");
     printf("1) Instruções\n2) Definição de parâmetros\n3) Iniciar simulação\n4) Estatistícas da última simulação\n5) Sair\n");
     while(!valido)
     {
@@ -72,6 +69,7 @@ int mostraMenu(void)
     }
     return escolha;
 }
+
 // Função de apresentação das instruções
 void instrucoes(void)
 {
@@ -79,6 +77,7 @@ void instrucoes(void)
     printf("Bem-vindo ao Simulador para Controle de Elevadores!\n");
     pausa();
 }
+
 // Função de definição dos parâmetros de simulação
 void defineParametros(void)
 {
@@ -90,7 +89,21 @@ void defineParametros(void)
         if(refresh)
         {
             system("cls");
-            printf("1) Número de andares: %d\n2) Número de elevadores: %d\n3) Capacidade máxima por elevador: %d\n",numAndares,numElevadores,capElevador);
+            char nomeOrigem[16];
+            switch(origemChamadas)
+            {
+            case ALEATORIO:
+                strcpy(nomeOrigem,"Aleatório");
+                break;
+            case ARQUIVO:
+                strcpy(nomeOrigem,"Arquivo");
+                break;
+            case TECLADO:
+                strcpy(nomeOrigem,"Teclado");
+                break;
+            }
+            printf("1) Tempo de simulação: %d s\n2) Número de andares: %d",tempoSimulacao,numAndares);
+            printf("\n3) Número de elevadores: %d\n4) Capacidade máxima por elevador: %d\n5) Origem das chamadas: %s\n",numElevadores,capElevador,nomeOrigem);
             printf("\nEscolha a opção para editar ou pressione v para voltar");
             refresh = false;
         }
@@ -105,7 +118,27 @@ void defineParametros(void)
             flag = false;
             do
             {
+                printf("Tempo de simulação: ");
+                fflush(stdin);
+                scanf("%d",&buf);
+                if(buf > 0 && buf <= TEMPO_MAX)
+                    flag = true;
+                else
+                    printf("Entrada inválida!\n");
+            }
+            while(!flag);
+            tempoSimulacao = buf;
+            refresh = true;
+            mostraCursor(false);
+            break;
+        case '2':
+            system("cls");
+            mostraCursor(true);
+            flag = false;
+            do
+            {
                 printf("Número de andares: ");
+                fflush(stdin);
                 scanf("%d",&buf);
                 if(buf > 0 && buf <= ANDARES_MAX)
                     flag = true;
@@ -117,13 +150,14 @@ void defineParametros(void)
             refresh = true;
             mostraCursor(false);
             break;
-        case '2':
+        case '3':
             system("cls");
             mostraCursor(true);
             flag = false;
             do
             {
                 printf("Número de elevadores: ");
+                fflush(stdin);
                 scanf("%d",&buf);
                 if(buf > 0 && buf <= ELEVADORES_MAX)
                     flag = true;
@@ -135,13 +169,14 @@ void defineParametros(void)
             refresh = true;
             mostraCursor(false);
             break;
-        case '3':
+        case '4':
             system("cls");
             mostraCursor(true);
             flag = false;
             do
             {
                 printf("Capacidade máxima por elevador: ");
+                fflush(stdin);
                 scanf("%d",&buf);
                 if(buf > 0 && buf <= CAP_MAX)
                     flag = true;
@@ -153,29 +188,62 @@ void defineParametros(void)
             refresh = true;
             mostraCursor(false);
             break;
+        case '5':
+            system("cls");
+            mostraCursor(false);
+            flag = false;
+            char c;
+            printf("Origem das chamadas: \n1) Aleatório\n2) Arquivo\n3) Teclado");
+            do
+            {
+                fflush(stdin);
+                c = getch();
+                if(c > '0' && c < '4')
+                    flag = true;
+            }
+            while(!flag);
+            switch(c)
+            {
+            case '1':
+                origemChamadas = ALEATORIO;
+                break;
+            case '2':
+                origemChamadas = ARQUIVO;
+                break;
+            case '3':
+                origemChamadas = TECLADO;
+                break;
+            }
+            refresh = true;
+            mostraCursor(false);
+            break;
         default:
             break;
         }
     }
 }
+
 // Função de apresentação das estatísticas geradas pelo simulador
 void mostraEstatisticas(void)
 {
-    FILE * arq = fopen(nomeArqStat,"r");
-    int qntd;
-    float tEsperaMed,tEsperaMax,tViagemMed,tViagemMax,numPassageirosMed;
+    FILE * arq = fopen(NOME_ARQ_STAT,"r");
+    int cConcluidas, tempoSimulacao, cRealizadas, cargaMax;
+    double tEsperaMed, tEsperaMax, tEsperaMediana, tEsperaDP;
+    double tViagemMed,tViagemMax, tViagemMediana, tViagemDP;
+    double numPassageirosMed;
     if(arq == NULL)
     {
         perror("\nArquivo de estatísticas - O seguinte erro ocorreu: ");
         exit(1);
     }
-    if(fscanf(arq,"%d|%f|%f|%f|%f|%f",&qntd,&tEsperaMed,&tEsperaMax,&tViagemMed,&tViagemMax,&numPassageirosMed))
+    if(fscanf(arq,"%d|%d|%d|%lf|%lf|%lf|%lf|%lf|%lf|%lf|%lf|%lf|%d",&tempoSimulacao,&cRealizadas,&cConcluidas,&tEsperaMed,&tEsperaMax,&tEsperaMediana,&tEsperaDP,&tViagemMed,&tViagemMax,&tViagemMediana,&tViagemDP,&numPassageirosMed,&cargaMax))
     {
         system("cls");
-        printf("Chamadas concluídas: %d\n",qntd);
-        printf("Tempo médio de espera: %.1f s\nTempo máximo de espera: %.1f s",tEsperaMed,tEsperaMax);
-        printf("\nTempo médio de viagem: %.1f s\nTempo máximo de viagem: %.1f s",tViagemMed,tViagemMax);
-        printf("\nNúmero médio de passageiros por minuto: %.2f\n\n",numPassageirosMed);
+        printf("Tempo de simulação: %d s\nChamadas Realizadas: %d\nChamadas concluídas: %d\n\n",tempoSimulacao,cRealizadas,cConcluidas);
+        printf("Tempo médio de espera: %.2f s\nTempo máximo de espera: %.2f s\nTempo mediano de espera: %.2f s\nDesvio Padrão de espera: %.2f s\n\n",tEsperaMed,tEsperaMax,tEsperaMediana,tEsperaDP);
+        printf("Tempo médio de viagem: %.2f s\nTempo máximo de viagem: %.2f s\nTempo mediano de viagem: %.2f s\nDesvio Padrão de viagem: %.2f s\n\n",tViagemMed,tViagemMax,tViagemMediana,tViagemDP);
+        printf("Número médio de passageiros transportados por hora: %.2f\nNúmero máximo de passageiros pendentes: %d\n",numPassageirosMed,cargaMax);
+
     }
     else
     {
@@ -186,14 +254,16 @@ void mostraEstatisticas(void)
     pausa();
     fclose(arq);
 }
+
 // Função que inicia a simulação
 void simula(void)
 {
     // Flag de saída da simulação
     bool sair = false;
     // Seta tempo e contador de identificação de chamadas para zero
-    tempo = 0;
+    tempoAtual = 0;
     idChamada = 0;
+    cargaMax = 0;
     // Aloca um vetor com o número de elevadores da struct Elevadorgene
     alocaEA();
     // Abre os arquivos necessários
@@ -204,20 +274,25 @@ void simula(void)
     setupElevadores();
     setupAndares();
     iniciaVetor(&chamadasConcluidas,5);
-    while(tempo <= TEMPO_MAX && !sair)
+    while(tempoAtual <= tempoSimulacao && !sair)
     {
-        if(pegaChamadas(ORIGEM_CHAMADAS))
+        if(pegaChamadas())
         {
-            while(tempo < call.tempoInicial)
+            while(tempoAtual < call.tempoInicial)
             {
                 moveElevadores();
             }
             defineElevador(call);
             posicionaChamada();
+            // Diferença entre chamadas recebidas e chamadas terminadas indica as chamadas pendentes
+            if((idChamada - chamadasConcluidas.qntd) > cargaMax)
+                cargaMax = idChamada - chamadasConcluidas.qntd;
         }
         else
         {
             moveElevadores();
+            if((idChamada - chamadasConcluidas.qntd) > cargaMax)
+                cargaMax = idChamada - chamadasConcluidas.qntd;
         }
     }
     geraEstatisticas();
@@ -233,6 +308,9 @@ void iniciaVariaveis(void)
     capElevador = CAP_ELEVADOR_STD;
     numAndares= NUM_ANDARES_STD;
     numElevadores = NUM_ELEVADORES_STD;
+    origemChamadas = ORIGEM_STD;
+    tempoSimulacao = TEMPO_SIMULACAO_STD;
+    srand(time(NULL));
 }
 
 /*------------------------------------------------------------------------------------------------*/
@@ -287,23 +365,20 @@ void fechaSimulacao(void)
 }
 
 // Obtem chamadas da origem desejada -- Revisar
-bool pegaChamadas(int origem)
+bool pegaChamadas(void)
 {
     bool status = true;
     bool flag = false;
     int andarOrigem,andarDestino,tempoCall;
-    switch(origem)
+    switch(origemChamadas)
     {
     //Random
     default:
-    case 1:
-        if(tempo < TEMPO_MAX - 1)
+    case ALEATORIO:
+        // Evita gerar chamadas que não serão terminadas antes do tempo máximo de simulação
+        if(tempoAtual < (tempoSimulacao - numAndares*TEMPO_POR_ANDAR))
         {
-            do
-            {
-                tempoCall = rand() % TEMPO_MAX;
-            }
-            while(tempoCall <= tempo);
+            tempoCall = tempoAtual + rand() % DELTA_T_MAX;
             andarOrigem = rand() % numAndares;
             do
             {
@@ -316,12 +391,12 @@ bool pegaChamadas(int origem)
             status = false;
         break;
     //Arquivo
-    case 2:
+    case ARQUIVO:
         // Verifica por fim de arquivo
         if(fscanf(arqChamadas,"%d,%d,%d",&tempoCall,&andarOrigem,&andarDestino) != EOF)
         {
             status = true;
-            if(tempoCall < 0 || tempoCall > TEMPO_MAX)
+            if(tempoCall < 0 || tempoCall > tempoSimulacao || tempoCall < tempoAtual)
                 status = false;
             if(andarOrigem < 0 || andarOrigem > numAndares)
                 status = false;
@@ -334,16 +409,17 @@ bool pegaChamadas(int origem)
             status = false;
         break;
     // Teclado
-    case 3:
+    case TECLADO:
         // Loopa até obter entrada válida
-        if(tempo < TEMPO_MAX)
+        if(tempoAtual < tempoSimulacao)
         {
             mostraCursor(true);
             do
             {
                 printf("Insira o tempo da chamada: ");
+                fflush(stdin);
                 scanf("%d",&tempoCall);
-                if(tempoCall <= TEMPO_MAX && tempoCall > tempo)
+                if(tempoCall <= tempoSimulacao && tempoCall > tempoAtual)
                     flag = true;
                 else
                     printf("Entrada inválida\n");
@@ -353,6 +429,7 @@ bool pegaChamadas(int origem)
             do
             {
                 printf("Insira o andar de origem: ");
+                fflush(stdin);
                 scanf("%d",&andarOrigem);
                 if(andarOrigem >= 0 && andarOrigem <= numAndares)
                     flag = true;
@@ -364,6 +441,7 @@ bool pegaChamadas(int origem)
             do
             {
                 printf("Insira o andar de destino: ");
+                fflush(stdin);
                 scanf("%d",&andarDestino);
                 if(andarDestino >= 0 && andarDestino <= numAndares && andarDestino != andarOrigem)
                     flag = true;
@@ -439,7 +517,7 @@ int moveElevadores(void)
         }
     }
     // Incremente o tempo em um segundo
-    tempo++;
+    tempoAtual++;
     return 0;
 }
 
@@ -576,8 +654,8 @@ void defineElevador(Chamada c)
 
         }
     }
-    fprintf(arqLog,"T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempo,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
-    printf("T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempo,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
+    fprintf(arqLog,"T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempoAtual,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
+    printf("T: %d | Chamada do passageiro #%d no andar %d, designada ao elevador #%d\n",tempoAtual,c.ID+1,c.andarOrigem,c.elevadorDesignado+1);
     free(distancias);
     free(id);
     distancias = NULL;
@@ -588,18 +666,18 @@ void defineElevador(Chamada c)
 void entraSai(int ID)
 {
     int i;
-    fprintf(arqLog,"T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
-    printf("T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
-    tempo += TEMPO_ABERTURA;
+    fprintf(arqLog,"T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
+    printf("T: %d | Elevador #%d - Porta abrindo no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
+    tempoAtual += TEMPO_ABERTURA;
     //Passsageiros descem primeiro:
     for(i = 0; i < elevadores[ID].vCall.qntd; i++)
         //Checa se o andar atual é o andar de destino do passageiro no interior do elevador
         if(elevadores[ID].vCall.chamadas[i].andarDestino == elevadores[ID].andarAtual)
         {
-            fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempo, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
-            printf("T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempo, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
+            fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempoAtual, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
+            printf("T: %d | Elevador #%d - Passageiro #%d desceu no andar %d\n",tempoAtual, ID+1, elevadores[ID].vCall.chamadas[i].ID+1, elevadores[ID].andarAtual);
             // Insere o tempo de saída do elevador
-            elevadores[ID].vCall.chamadas[i].tempoSaida = tempo;
+            elevadores[ID].vCall.chamadas[i].tempoSaida = tempoAtual;
             // Remove chamada do elevador e coloca no vetor de chamadas concluídas
             insereChamada(&chamadasConcluidas,elevadores[ID].vCall.chamadas[i]);
             removeChamada(&elevadores[ID].vCall,i);
@@ -617,10 +695,10 @@ void entraSai(int ID)
             // Se o número de passageiros atual for zero então o primeiro passageiro que entrar terá controle sobre o elevador
             if(elevadores[ID].numP == 0)
             {
-                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
-                printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 // Insere o tempo de entrada no elevador
-                andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempo;
+                andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempoAtual;
                 // Incrementa o total de passageiros transportados e o número atual de passageiros.
                 elevadores[ID].numP++;
                 elevadores[ID].totalP++;
@@ -638,10 +716,10 @@ void entraSai(int ID)
             // Checa se o sentido da chamada é o mesmo do elevador e se a capacidade do elevador não será excedida.
             else if((andares[elevadores[ID].andarAtual].vCall.chamadas[i].sentido == elevadores[ID].sentido) &&  (elevadores[ID].numP+1) <= capElevador)
             {
-                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
-                printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempo, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                fprintf(arqLog,"T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
+                printf("T: %d | Elevador #%d - Passageiro #%d entrou com destino ao andar %d\n", tempoAtual, ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].ID+1, andares[elevadores[ID].andarAtual].vCall.chamadas[i].andarDestino);
                 // Insere o tempo de entrada no elevador
-                andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempo;
+                andares[elevadores[ID].andarAtual].vCall.chamadas[i].tempoEntrada = tempoAtual;
                 // Incrementa o total de passageiros transportados e o número atual de passageiros.
                 elevadores[ID].numP++;
                 elevadores[ID].totalP++;
@@ -667,9 +745,9 @@ void entraSai(int ID)
     // Se o número de passageiros apos a entrada e saída for igual a zero então o elevador está apto a receber uma chamada externa
     if(elevadores[ID].numP == 0)
         elevadores[ID].estaAtendendo = false;
-    fprintf(arqLog,"T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
-    printf("T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempo,ID+1,elevadores[ID].andarAtual);
-    tempo += TEMPO_FECHAMENTO;
+    fprintf(arqLog,"T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
+    printf("T: %d | Elevador #%d - Porta fechando no andar %d...\n",tempoAtual,ID+1,elevadores[ID].andarAtual);
+    tempoAtual += TEMPO_FECHAMENTO;
 }
 
 // Calcula as estatísticas baseado no vetor de chamadas concluídas
@@ -678,36 +756,59 @@ void geraEstatisticas(void)
     if(chamadasConcluidas.qntd > 0)
     {
         int i;
-        float tEsperaMed = 0, tEsperaMax = 0, tViagemMed = 0, tViagemMax = 0, numPassageirosMed = 0;
-        for(i = 0; i < chamadasConcluidas.qntd; i++)
+        // Quantidade de chamadas concluidas
+        int qntd = chamadasConcluidas.qntd;
+        // Aloca vetores para tempos de espera e de viagem
+        int * tEsperas = (int *) calloc(qntd,sizeof(int));
+        if(tEsperas == NULL)
         {
-            // Cálculos do tempo de espera
-            float tEspera = chamadasConcluidas.chamadas[i].tempoEntrada - chamadasConcluidas.chamadas[i].tempoInicial;
-            tEsperaMed += tEspera;
-            if(tEspera > tEsperaMax)
-            {
-                tEsperaMax = tEspera;
-            }
-            // Cálculos do tempo de viagem
-            float tViagem = chamadasConcluidas.chamadas[i].tempoSaida - chamadasConcluidas.chamadas[i].tempoEntrada;
-            tViagemMed += tViagem;
-            if(tViagem > tViagemMax)
-            {
-                tViagemMax = tViagem;
-            }
-
+            fprintf(stderr, "Falha ao alocar vetor de tempos de espera\n");
+            exit(1);
         }
-        tEsperaMed /= chamadasConcluidas.qntd;
-        tViagemMed /= chamadasConcluidas.qntd;
-        // Cálculo da carga média
-        for(i = 0; i < numElevadores; i++)
-            numPassageirosMed += (float) elevadores[i].totalP/(tempo/60);
-        numPassageirosMed /= numElevadores;
+        int * tViagens = (int *) calloc(qntd,sizeof(int));
+        if(tViagens == NULL)
+        {
+            fprintf(stderr, "Falha ao alocar vetor de tempos de viagem\n");
+            exit(1);
+        }
+        // Média, Máximo, Mínimo, Mediana e Desvio Padrão
+        double tEsperaMed, tEsperaMax, tEsperaMediana, tEsperaDP;
+        double tViagemMed, tViagemMax, tViagemMediana, tViagemDP;
+        // Número médio de passageiros por minuto
+        double numPassageirosMed = 0;
+        // Percorre vetor de chamadasConcluidas calculando os tempos
+        for(i = 0; i < qntd; i++)
+        {
+            tEsperas[i] = chamadasConcluidas.chamadas[i].tempoEntrada - chamadasConcluidas.chamadas[i].tempoInicial;
+            tViagens[i] = chamadasConcluidas.chamadas[i].tempoSaida - chamadasConcluidas.chamadas[i].tempoEntrada;
+        }
+        // Ordena vetores
+        ordenaVetor(tEsperas, qntd);
+        ordenaVetor(tViagens, qntd);
+        // Cálcula média dos vetores e insere nas variaveis correspondentes
+        tEsperaMed = media(tEsperas, qntd);
+        tViagemMed = media(tViagens, qntd);
+        // Pega último elemento dos vetores
+        tEsperaMax = tEsperas[qntd-1];
+        tViagemMax = tViagens[qntd-1];
+        // Mediana
+        tEsperaMediana = mediana(tEsperas, qntd);
+        tViagemMediana = mediana(tViagens, qntd);
+        // Desvio Padrão
+        tEsperaDP = desvioPadrao(tEsperas, qntd);
+        tViagemDP = desvioPadrao(tViagens, qntd);
+        // Cálculo da número médio de passageiros transportados com tempo em horas
+        numPassageirosMed = qntd / (tempoAtual / 3600.0);
         // Imprime resultados.
-        printf("\nEstatísticas da simulação: \n\nChamadas concluídas: %d\nTempo médio de espera: %.1f s\nTempo máximo de espera: %.1f s",chamadasConcluidas.qntd,tEsperaMed,tEsperaMax);
-        printf("\nTempo médio de viagem: %.1f s\nTempo máximo de viagem: %.1f s",tViagemMed,tViagemMax);
-        printf("\nNúmero médio de passageiros por minuto: %.2f\n\n",numPassageirosMed);
-        fprintf(arqStat,"%d|%.1f|%.1f|%.1f|%.1f|%.5f",chamadasConcluidas.qntd,tEsperaMed,tEsperaMax,tViagemMed,tViagemMax,numPassageirosMed);
+        printf("\nEstatísticas da simulação: \n\nTempo de simulação: %d s\nChamadas realizadas: %d\nChamadas concluídas: %d\n\n",tempoAtual,idChamada,qntd);
+        printf("Tempo médio de espera: %.2f s\nTempo máximo de espera: %.2f s\nTempo mediano de espera: %.2f s\nDesvio Padrão de espera: %.2f s\n\n",tEsperaMed,tEsperaMax,tEsperaMediana,tEsperaDP);
+        printf("Tempo médio de viagem: %.2f s\nTempo máximo de viagem: %.2f s\nTempo mediano de viagem: %.2f s\nDesvio Padrão de viagem: %.2f s\n\n",tViagemMed,tViagemMax,tViagemMediana,tViagemDP);
+        printf("Número médio de passageiros transportados por hora: %.2lf\nNúmero máximo de passageiros pendentes: %d\n",numPassageirosMed,cargaMax);
+        // Imprime no arquivo de estatísticas
+        fprintf(arqStat,"%d|%d|%d|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%.2f|%d",tempoAtual,idChamada,qntd,tEsperaMed,tEsperaMax,tEsperaMediana,tEsperaDP,tViagemMed,tViagemMax,tViagemMediana,tViagemDP,numPassageirosMed,cargaMax);
+        // Desaloca vetores
+        free(tEsperas);
+        free(tViagens);
     }
     else
         printf("\nNenhuma chamada foi concluída!\n");
@@ -716,7 +817,7 @@ void geraEstatisticas(void)
 // Função para abertura dos arquivos necessários que checa por erros
 void abreArquivos(void)
 {
-    arqChamadas = fopen(nomeArqChamadas,"r"); // Arquivo de leitura de chamadas
+    arqChamadas = fopen(NOME_ARQ_CHAMADAS,"r"); // Arquivo de leitura de chamadas
     if(arqChamadas == NULL)
     {
         perror("\nArquivo de chamadas - O seguinte erro ocorreu: ");
@@ -724,13 +825,13 @@ void abreArquivos(void)
     }
     //Ignora primeira linha do arquivo de chamadas
     fscanf(arqChamadas, "%*[^\n]\n");
-    arqLog = fopen(nomeArqLog,"w");
+    arqLog = fopen(NOME_ARQ_LOG,"w");
     if(arqLog == NULL)
     {
         perror("\nArquivo de logs - O seguinte erro ocorreu: ");
         exit(1);
     }
-    arqStat = fopen(nomeArqStat,"w");
+    arqStat = fopen(NOME_ARQ_STAT,"w");
     if(arqStat == NULL)
     {
         perror("\nArquivo de estatísticas - O seguinte erro ocorreu: ");
@@ -886,6 +987,54 @@ void ordenaVetor(int * vec,int tam)
             }
         }
     }
+}
+
+// Calcula média aritmética de um vetor de inteiros
+double media(int * vec, int tam)
+{
+    int i;
+    double media = 0;
+    for(i = 0; i < tam; i++)
+        media += vec[i];
+    media /= tam;
+    return media;
+}
+
+// Calcula a mediana de um vetor de inteiros
+double mediana(int * vec, int tam)
+{
+    int index;
+    double mediana;
+    // Ordena vetor para encontrar a mediana
+    ordenaVetor(vec, tam);
+    // Caso seja impar
+    if(tam % 2 == 1)
+    {
+        index = (int) tam / 2 + 1;
+        mediana = (double) vec[index];
+    }
+    else
+    {
+        index = tam / 2;
+        // Caso existam apenas duas chamadas.
+        if(index == 1)
+            index = 0;
+        mediana = (double) (vec[index] + vec[index+1]) / 2;
+    }
+    return mediana;
+}
+
+// Calcula o desvio padrão de um vetor de inteiros
+double desvioPadrao(int * vec, int tam)
+{
+    int i = 0;
+    double md = media(vec,tam);
+    double DP = 0;
+    for(i = 0; i < tam; i ++)
+    {
+        DP += pow((vec[i] - md), 2);
+    }
+    return sqrt(DP/tam);
 }
 
 void printaEspacos(int qntd)
